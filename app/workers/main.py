@@ -111,15 +111,21 @@ async def _run(names: set[str] | None) -> None:
         log.info("workers.stopped")
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Background workers")
+def main(argv: list[str] | None = None) -> None:
+    """Entrypoint.
+
+    ``argv`` is passed explicitly by ``app.main`` so the dispatching service
+    name is not re-parsed here; it defaults to ``sys.argv[1:]`` when the module
+    is run directly.
+    """
+    parser = argparse.ArgumentParser(prog="app.main worker", description="Background workers")
     parser.add_argument(
         "--only",
         nargs="*",
         default=None,
         help="Run only the named workers (default: all)",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     names = set(args.only) if args.only else None
     with contextlib.suppress(KeyboardInterrupt, asyncio.CancelledError):
         asyncio.run(_run(names))

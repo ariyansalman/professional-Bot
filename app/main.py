@@ -92,7 +92,8 @@ def main() -> None:
     elif service == "worker":
         from app.workers.main import main as worker_main
 
-        worker_main()
+        # Arguments after the service name belong to the worker parser.
+        worker_main(sys.argv[2:])
     else:
         with contextlib.suppress(KeyboardInterrupt, asyncio.CancelledError):
             asyncio.run(_run_all())
