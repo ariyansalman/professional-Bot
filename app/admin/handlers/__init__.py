@@ -12,6 +12,7 @@ def admin_router() -> Router:
         orders,
         payments,
         providers,
+        refunds,
         resellers,
         system,
         users,
@@ -21,6 +22,7 @@ def admin_router() -> Router:
     router.include_router(dashboard.router)
     router.include_router(orders.router)
     router.include_router(payments.router)
+    router.include_router(refunds.router)
     router.include_router(catalog.router)
     router.include_router(users.router)
     router.include_router(resellers.router)

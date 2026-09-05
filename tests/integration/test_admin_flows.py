@@ -36,6 +36,7 @@ ADMIN_SECTIONS = [
     "audit",
     "broadcast",
     "settings",
+    "refunds",
 ]
 
 
@@ -243,6 +244,37 @@ async def test_high_risk_action_requires_a_reason_then_a_confirmation(
     assert any("Approve" in b for b in confirm.buttons)
     await session.refresh(intent)
     assert intent.status.value == "under_review", "approval must not happen before confirmation"
+
+
+async def test_refund_flow_requires_amount_reason_then_confirmation(
+    bot_harness, admin_session, session, monkeypatch
+):
+    """A refund is never one tap: amount + reason, then an explicit confirm."""
+    from tests.integration.test_refunds import _paid_order
+
+    order, _ = await _paid_order(session, monkeypatch, price="20.00")
+    await session.commit()
+
+    await _open_admin(bot_harness)
+
+    start = await feed(
+        bot_harness,
+        callback_update(
+            AdminCB(section="refunds", action="new", arg=order.id.hex).pack(), update_id=120
+        ),
+    )
+    assert "CREATE REFUND" in start.texts[0]
+    assert "Refundable" in start.texts[0]
+
+    entered = await feed(bot_harness, message_update("5.00 duplicate payment", update_id=121))
+    assert "CONFIRM REFUND" in entered.texts[0]
+    assert "duplicate payment" in entered.texts[0]
+
+    from app.db.repositories.orders import RefundRepository
+
+    assert await RefundRepository(session).list_for_order(order.id) == [], (
+        "no refund may be recorded before the confirmation"
+    )
 
 
 async def test_a_non_admin_cannot_reach_any_admin_section(bot_harness, session):

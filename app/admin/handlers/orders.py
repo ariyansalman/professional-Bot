@@ -193,6 +193,8 @@ async def _detail(
         Permissions.ORDERS_CANCEL
     ):
         rows.append([button("❌ Cancel order", adm("orders", "cancel", order.id.hex))])
+    if order.status.is_paid and admin.can(Permissions.REFUNDS_CREATE):
+        rows.append([button("↩️ Refund", adm("refunds", "new", order.id.hex))])
     if admin.can(Permissions.AUDIT_VIEW):
         rows.append([button("🧾 Audit", adm("audit", arg=order.id.hex))])
     rows.append(admin_back_row("orders"))

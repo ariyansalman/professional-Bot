@@ -10,6 +10,7 @@ from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.admin.filters import IsAdmin
+from app.admin.handlers.confirmations import dispatch_reason, register_reason
 from app.admin.keyboards.panels import (
     adm,
     admin_back_row,
@@ -299,22 +300,42 @@ async def _request_rejection(
 async def capture_reason(
     message: Message, session: AsyncSession, admin: AdminContext, state: FSMContext
 ) -> None:
-    """Capture the reason, then ask for a final confirmation (section 114)."""
+    """Sole owner of the reason-capture state; dispatches to the right section.
+
+    Several admin sections use this one state. Registering two handlers for it
+    would let whichever router loaded first swallow the other's input, so the
+    pending action name decides who handles it.
+    """
     data = await state.get_data()
     await state.clear()
     action = data.get("pending_action")
     target = data.get("pending_target")
-    reason = (message.text or "").strip()[:400]
+    text = (message.text or "").strip()[:400]
 
     if not action or not target:
         await render(message, "⚠️ That action expired.", build([admin_back_row()]))
         return
-    if len(reason) < 3:
+
+    await dispatch_reason(message, session, admin, action, target, text)
+
+
+@register_reason("payment_approve")
+@register_reason("payment_reject")
+async def _payment_reason(
+    message: Message,
+    session: AsyncSession,
+    admin: AdminContext,
+    action: str,
+    target: str,
+    text: str,
+) -> None:
+    """Turn the operator's reason into an explicit confirmation (section 114)."""
+    if len(text) < 3:
         await render(message, "⚠️ A reason is required.", build([admin_back_row("payments")]))
         return
 
     token = await create_confirmation(
-        actor_id=admin.user.id, action=action, payload={"target": target, "reason": reason}
+        actor_id=admin.user.id, action=action, payload={"target": target, "reason": text}
     )
     verb = "APPROVE" if action == "payment_approve" else "REJECT"
     await render(
@@ -324,7 +345,7 @@ async def capture_reason(
                 f"⚠️ <b>CONFIRM {verb}</b>",
                 "",
                 f"Payment: <code>{esc(target)}</code>",
-                f"Reason: {esc(reason)}",
+                f"Reason: {esc(text)}",
                 "",
                 "This is a financial action and will be recorded in the audit log.",
             ]

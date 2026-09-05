@@ -35,10 +35,34 @@ transaction, so a manual approval can never double-credit an order.
 
 ## Refunds
 
-Refunds are separate from verification and are never automatic. Record the
-refund against the order, execute the transfer from your own wallet or exchange,
-then mark it complete with the external reference. The ledger keeps the payment
-and the refund as distinct entries, so the financial history stays truthful.
+**Orders → \<order\> → Refund**, or **Refunds** from the dashboard.
+
+Refunds are a separate financial event from payment verification. A verified
+payment is never rewound: the money arrived, and the ledger keeps saying so. A
+refund is recorded alongside it as its own entry.
+
+The flow is deliberately four steps:
+
+1. **Request** — enter an amount and a reason (`10.00 duplicate payment`), or
+   just a reason to refund the full remaining balance
+2. **Confirm** — nothing is recorded until you confirm
+3. **Approve** — authorises you to send the funds
+4. **Mark sent** — attach the transaction reference of the transfer you made
+
+The platform never moves funds itself. Sending crypto needs withdrawal-capable
+credentials, which this platform never asks for and never stores; automating it
+would mean holding keys that can drain the business. So you send the transfer
+from your own wallet or exchange and record the proof here.
+
+Guards that keep the refund ledger truthful:
+
+- an unpaid order cannot be refunded
+- you cannot refund more than actually arrived
+- partial refunds accumulate and cannot overdraw the balance
+- a refund cannot be completed without an external reference
+- completing twice journals once
+- a fully refunded order becomes `refunded`; a partial refund leaves the order
+  alone, because the customer keeps what they bought
 
 ## Adding stock
 

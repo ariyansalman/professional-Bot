@@ -141,4 +141,6 @@ app/
 - Delivery checks the payment record, not the order's status column
 - A delivery failure never reverses a payment
 - Financial history is append-only; products and orders are archived, not deleted
+- Refunds are recorded, never executed automatically: the platform never holds
+  withdrawal-capable credentials
 - Provider limitations are documented, never emulated

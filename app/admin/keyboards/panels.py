@@ -68,6 +68,8 @@ def dashboard_keyboard(context: AdminContext) -> InlineKeyboardMarkup:
         rows.append(row)
 
     row = []
+    if context.can(Permissions.REFUNDS_CREATE):
+        row.append(button("↩️ Refunds", adm("refunds")))
     if context.can(Permissions.RECONCILIATION_RESOLVE):
         row.append(button("🧮 Reconciliation", adm("reconciliation")))
     if context.can(Permissions.AUDIT_VIEW):
