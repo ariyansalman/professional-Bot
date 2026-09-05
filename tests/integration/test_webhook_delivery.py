@@ -12,13 +12,12 @@ import hmac
 import json
 
 import httpx
-import pytest
 import pytest_asyncio
 import respx
 
 from app.core.security import generate_webhook_secret, get_secret_box
 from app.db.models.reseller import ResellerAccount, WebhookEndpoint
-from app.db.repositories.resellers import WebhookDeliveryRepository, WebhookRepository
+from app.db.repositories.resellers import WebhookDeliveryRepository
 from app.domain.enums import ResellerStatus, WebhookDeliveryStatus, WebhookEvent
 from app.workers.webhooks.dispatcher import WebhookWorker
 from tests.factories import make_user
