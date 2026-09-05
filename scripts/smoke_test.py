@@ -19,8 +19,8 @@ import uuid
 
 import httpx
 
-PASS = "\033[32m✓\033[0m"
-FAIL = "\033[31m✗\033[0m"
+OK_MARK = "\033[32m✓\033[0m"
+FAIL_MARK = "\033[31m✗\033[0m"
 
 
 class Smoke:
@@ -32,7 +32,7 @@ class Smoke:
 
     def check(self, name: str, ok: bool, detail: str = "") -> None:
         self.checks += 1
-        print(f"  {PASS if ok else FAIL} {name}" + (f" — {detail}" if detail and not ok else ""))
+        print(f"  {OK_MARK if ok else FAIL_MARK} {name}" + (f" — {detail}" if detail and not ok else ""))
         if not ok:
             self.failures.append(name)
 
@@ -46,11 +46,11 @@ class Smoke:
 
         print()
         if self.failures:
-            print(f"{FAIL} {len(self.failures)}/{self.checks} checks failed:")
+            print(f"{FAIL_MARK} {len(self.failures)}/{self.checks} checks failed:")
             for failure in self.failures:
                 print(f"    - {failure}")
             return 1
-        print(f"{PASS} all {self.checks} checks passed")
+        print(f"{OK_MARK} all {self.checks} checks passed")
         return 0
 
     async def _health(self, client: httpx.AsyncClient) -> None:

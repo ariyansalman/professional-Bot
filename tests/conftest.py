@@ -54,6 +54,27 @@ async def session(sessionmaker_) -> AsyncIterator[AsyncSession]:
         yield session
 
 
+@pytest_asyncio.fixture(autouse=True)
+async def _reset_redis():
+    """Drop the cached Redis client between tests.
+
+    The client is a process-wide singleton bound to the event loop that created
+    its connections. Each test gets a fresh loop, so a client carried over from
+    a previous test would raise "Event loop is closed" on its first use. In
+    production there is one long-lived loop per process, so the singleton is
+    correct there.
+    """
+    yield
+    from app.core.redis import close_redis
+
+    try:
+        await close_redis()
+    except Exception:  # teardown must never fail a test
+        from app.core import redis as redis_module
+
+        redis_module._redis = None
+
+
 @pytest.fixture
 def anyio_backend() -> str:
     return "asyncio"
