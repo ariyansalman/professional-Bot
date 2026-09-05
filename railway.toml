@@ -1,0 +1,22 @@
+# Railway deployment.
+#
+# Deploy three services from this one repository, each overriding startCommand:
+#
+#   api     : alembic upgrade head && python -m app.main api
+#   bot     : python -m app.main bot
+#   worker  : python -m app.main worker
+#
+# Only the api service should run migrations, so bot and worker replicas never
+# race on schema changes.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "alembic upgrade head && python -m app.main api"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+numReplicas = 1
