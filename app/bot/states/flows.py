@@ -27,6 +27,12 @@ class AdminFlow(StatesGroup):
     product_delivery_type = State()
     product_stock = State()
     product_media = State()
+    # Product editing: the field being edited is kept in FSM data.
+    product_edit_value = State()
+    product_media_upload = State()
+    # Categories
+    category_name = State()
+    category_edit_value = State()
     # Inventory
     adding_stock = State()
     # Coupons

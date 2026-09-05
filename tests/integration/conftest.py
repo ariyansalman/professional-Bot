@@ -150,6 +150,39 @@ def message_update(text: str, update_id: int = 1) -> Update:
     )
 
 
+def photo_update(file_id: str = "AgACAgQAAxkBAAI-photo", update_id: int = 3) -> Update:
+    """A photo message. Telegram sends the sizes smallest-first."""
+    from aiogram.types import PhotoSize
+
+    return Update(
+        update_id=update_id,
+        message=Message(
+            message_id=update_id,
+            date=datetime.now(UTC),
+            chat=Chat(id=TELEGRAM_ID, type="private"),
+            from_user=TgUser(
+                id=TELEGRAM_ID, is_bot=False, first_name="Tester", username="tester"
+            ),
+            photo=[
+                PhotoSize(
+                    file_id=f"{file_id}-thumb",
+                    file_unique_id="thumb",
+                    width=90,
+                    height=90,
+                    file_size=1024,
+                ),
+                PhotoSize(
+                    file_id=file_id,
+                    file_unique_id="full",
+                    width=1280,
+                    height=1280,
+                    file_size=91024,
+                ),
+            ],
+        ),
+    )
+
+
 def callback_update(data: str, update_id: int = 2) -> Update:
     from aiogram.types import CallbackQuery
 

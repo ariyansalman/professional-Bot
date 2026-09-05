@@ -47,6 +47,30 @@ class CategoryRepository(BaseRepository[Category]):
         stmt = select(Category).where(Category.slug == slug, Category.deleted_at.is_(None))
         return await self.session.scalar(stmt)
 
+    async def list_all(self) -> list[Category]:
+        """Every category the operator may manage, active or not."""
+        stmt = (
+            select(Category)
+            .where(Category.deleted_at.is_(None))
+            .order_by(Category.sort_priority.desc(), Category.name_en)
+        )
+        return list((await self.session.scalars(stmt)).all())
+
+    async def assigned_product_counts(self) -> dict[uuid.UUID, int]:
+        """Products still attached to each category, whatever their status.
+
+        Archiving a category that products still point at would leave those
+        products orphaned in the shop, so the admin screen needs the full
+        count and not just the listed one.
+        """
+        stmt = (
+            select(Product.category_id, func.count(Product.id))
+            .where(Product.deleted_at.is_(None))
+            .group_by(Product.category_id)
+        )
+        rows = await self.session.execute(stmt)
+        return {category_id: count for category_id, count in rows if category_id}
+
     async def product_counts(self) -> dict[uuid.UUID, int]:
         """Listed-product count per category, for the shop screen."""
         stmt = (
@@ -86,10 +110,18 @@ class ProductRepository(BaseRepository[Product]):
         return await self.session.scalar(stmt)
 
     async def get_with_media(self, product_id: uuid.UUID) -> Product | None:
+        """The admin detail read, always refreshed from the database.
+
+        ``populate_existing`` matters here: an already-loaded ``media``
+        collection is not overwritten by a plain re-query, so an admin screen
+        redrawn right after adding or reordering an image would otherwise show
+        the collection as it was before the write.
+        """
         stmt = (
             select(Product)
             .where(Product.id == product_id)
             .options(selectinload(Product.media), selectinload(Product.category))
+            .execution_options(populate_existing=True)
         )
         return await self.session.scalar(stmt)
 

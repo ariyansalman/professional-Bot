@@ -180,6 +180,12 @@ async def _product_detail(
     if admin.can(Permissions.INVENTORY_MANAGE) and product.tracks_stock_items:
         rows.append([button("📦 Add stock", adm("inventory", "add", product.id.hex))])
     if admin.can(Permissions.PRODUCTS_MANAGE):
+        rows.append(
+            [
+                button("✏️ Edit", adm("pedit", "menu", product.id.hex)),
+                button(f"🖼 Media ({len(product.media)})", adm("pmedia", "list", product.id.hex)),
+            ]
+        )
         toggle = "⏸ Deactivate" if product.status is ProductStatus.ACTIVE else "▶️ Activate"
         rows.append([button(toggle, adm("products", "toggle", product.id.hex))])
     if admin.can(Permissions.INVENTORY_VIEW):

@@ -8,9 +8,11 @@ from aiogram import Router
 def admin_router() -> Router:
     from app.admin.handlers import (
         catalog,
+        categories,
         dashboard,
         orders,
         payments,
+        product_edit,
         providers,
         refunds,
         resellers,
@@ -24,6 +26,8 @@ def admin_router() -> Router:
     router.include_router(payments.router)
     router.include_router(refunds.router)
     router.include_router(catalog.router)
+    router.include_router(product_edit.router)
+    router.include_router(categories.router)
     router.include_router(users.router)
     router.include_router(resellers.router)
     router.include_router(system.router)

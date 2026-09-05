@@ -11,6 +11,7 @@ import inspect
 
 import pytest
 from aiogram import Router
+from sqlalchemy import inspect as inspect_mapper
 
 from app.bot.callbacks import (
     AdminCB,
@@ -133,6 +134,55 @@ def test_callback_payloads_stay_within_telegram_limit(router):
     for sample in samples:
         packed = sample.pack()
         assert len(packed.encode()) <= 64, f"{packed} is {len(packed.encode())} bytes"
+
+
+def test_every_admin_edit_key_fits_in_a_callback_payload():
+    """The edit screens put an id plus a second reference in one payload.
+
+    That is exactly where Telegram's 64-byte limit bites, and a long new field
+    key would otherwise only blow up once an operator tapped the button. Every
+    key is checked here rather than a hand-picked sample.
+    """
+    import uuid
+
+    from app.admin.handlers.categories import FIELDS as CATEGORY_FIELDS
+    from app.admin.handlers.product_edit import FIELDS, REF_LENGTH, TOGGLES
+
+    identifier = uuid.uuid4().hex
+    reference = uuid.uuid4().hex[:REF_LENGTH]
+
+    cases = [("pedit", "field", f"{identifier}.{key}") for key in FIELDS]
+    cases += [("pedit", "toggle", f"{identifier}.{key}") for key in TOGGLES]
+    cases += [("categories", "field", f"{identifier}.{key}") for key in CATEGORY_FIELDS]
+    cases += [
+        ("pedit", "setcat", f"{identifier}.{reference}"),
+        ("pmedia", "remove", f"{identifier}.{reference}"),
+        ("pmedia", "primary", f"{identifier}.{reference}"),
+    ]
+
+    for section, action, arg in cases:
+        try:
+            packed = AdminCB(section=section, action=action, arg=arg, page=99).pack()
+        except ValueError as exc:  # aiogram refuses to pack an oversized payload
+            pytest.fail(f"{section}/{action} with arg {arg!r} does not fit: {exc}")
+        assert len(packed.encode()) <= 64, f"{packed} is {len(packed.encode())} bytes"
+
+
+def test_every_editable_field_maps_to_a_real_column():
+    """A typo in the field table would silently create an attribute instead."""
+    from app.admin.handlers.categories import FIELDS as CATEGORY_FIELDS
+    from app.admin.handlers.product_edit import FIELDS, TOGGLES
+    from app.db.models.catalog import Category, Product
+
+    product_columns = {c.key for c in inspect_mapper(Product).attrs}
+    for field in FIELDS.values():
+        assert field.key in product_columns, f"Product has no attribute {field.key!r}"
+    for attribute, _ in TOGGLES.values():
+        assert attribute in product_columns, f"Product has no attribute {attribute!r}"
+
+    category_columns = {c.key for c in inspect_mapper(Category).attrs}
+    for field in CATEGORY_FIELDS.values():
+        assert field.key in category_columns, f"Category has no attribute {field.key!r}"
 
 
 # --- state-aware buttons --------------------------------------------------

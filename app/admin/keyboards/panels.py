@@ -40,6 +40,8 @@ def dashboard_keyboard(context: AdminContext) -> InlineKeyboardMarkup:
         row.append(button("🛍 Products", adm("products")))
     if context.can(Permissions.INVENTORY_VIEW):
         row.append(button("📦 Inventory", adm("inventory")))
+    if context.can(Permissions.CATEGORIES_MANAGE):
+        row.append(button("📂 Categories", adm("categories")))
     if row:
         rows.append(row)
 

@@ -71,6 +71,47 @@ are encrypted before storage, de-duplicated per product by fingerprint (so
 importing the same file twice cannot sell one key to two customers), and your
 message is deleted from the chat immediately afterwards.
 
+## Editing a product
+
+**Products → \<product\> → Edit** opens one screen holding every editable
+field: name, prices, descriptions, the feature and requirement lists, quantity
+limits, the low-stock threshold, sort priority and the reseller tier.
+
+Each field is validated before it is saved, so a mistyped price is refused
+rather than stored. Two rules are enforced here rather than left to care:
+
+- reseller sales cannot be switched on until a wholesale price exists,
+  otherwise resellers would buy at the retail price
+- a maximum quantity below the minimum is corrected on save, so a product can
+  never end up impossible to order
+
+Every change is audit-logged with the field, the old value and the new one.
+
+## Product images
+
+**Products → \<product\> → Media**, then send a photo. Telegram's own
+`file_id` is stored, so no image hosting is needed and the picture is re-sent
+instantly on the product page. The first image is the one buyers see; use
+**Make primary** to promote another, and **Remove** to delete one.
+
+Only photos are accepted — a file or a text message is refused and the upload
+stays open, so you can simply send the photo again.
+
+## Categories
+
+**Categories** lists every category with the number of products in it.
+
+- **New category** — send a name; the slug is generated for you and stays
+  unique. A name with no Latin characters still gets a usable slug.
+- **Hide from shop** takes a category out of the storefront without touching
+  the products in it.
+- **Archive** is offered only once no product uses the category. Archiving one
+  that products still point at would silently drop those products out of the
+  shop, so it is refused rather than cascaded.
+
+Move products between categories from **Products → \<product\> → Edit →
+Change category**.
+
 ## Rotating a receiving address
 
 1. **Providers → Methods → \<method\> → Change address**
