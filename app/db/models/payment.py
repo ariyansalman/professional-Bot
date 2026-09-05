@@ -146,6 +146,9 @@ class PaymentMethod(UUIDPrimaryKey, TimestampMixin, Base):
 
     #: Quote-currency price per unit of ``asset``. 1 for stablecoin==quote.
     quote_rate: Mapped[Decimal] = mapped_column(Money, default=Decimal("1"))
+    #: When the rate was last set. A volatile asset priced from a rate set days
+    #: ago mis-charges every order, so the age is surfaced, not assumed fresh.
+    quote_rate_updated_at: Mapped[datetime | None] = mapped_column(TZDateTime, default=None)
     instructions: Mapped[str | None] = mapped_column(Text, default=None)
     warning_text: Mapped[str | None] = mapped_column(Text, default=None)
     config: Mapped[dict[str, Any]] = mapped_column(default=dict)

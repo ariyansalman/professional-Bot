@@ -717,3 +717,100 @@ async def test_a_staff_member_without_the_permission_cannot_manage_categories(
     )
     rendered = " ".join(recorder.texts + recorder.toasts)
     assert "CATEGORIES" not in rendered.upper()
+
+
+# --- payment methods ------------------------------------------------------
+
+
+async def test_a_method_cannot_be_enabled_until_it_is_fully_configured(
+    bot_harness, admin_session, session
+):
+    """Each blocker is reported by name, not as a generic refusal."""
+    from app.db.models.payment import PaymentMethod
+    from app.domain.enums import NetworkCode
+
+    method = await make_payment_method(session, code="btc_setup")
+    method.is_enabled = False
+    method.asset = "BTC"
+    method.asset_decimals = 8
+    method.network = NetworkCode.BTC
+    method.token_contract = None
+    method.receiving_address = None
+    method.quote_rate = Decimal("0")
+    await session.commit()
+    mid = method.id.hex
+
+    await _open_admin(bot_harness)
+
+    async def toggle(update_id: int) -> str:
+        recorder = await feed(
+            bot_harness,
+            callback_update(
+                AdminCB(section="method", action="toggle", arg=mid).pack(), update_id=update_id
+            ),
+        )
+        return recorder.texts[0]
+
+    assert "receiving address" in await toggle(160)
+
+    method.receiving_address = "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"
+    await session.commit()
+    # Address in place, but a Bitcoin method still has no price.
+    assert "quote rate" in await toggle(161)
+
+    method.quote_rate = Decimal("60000")
+    await session.commit()
+    await toggle(162)
+
+    refreshed = await session.get(PaymentMethod, method.id)
+    await session.refresh(refreshed)
+    assert refreshed.is_enabled is True
+
+
+async def test_a_mistyped_receiving_address_is_refused(bot_harness, admin_session, session):
+    """One wrong character would send every future payment to nobody."""
+    method = await make_payment_method(session, code="trc_addr")
+    await session.commit()
+    mid = method.id.hex
+
+    await _open_admin(bot_harness)
+    await feed(
+        bot_harness,
+        callback_update(
+            AdminCB(section="method", action="address", arg=mid).pack(), update_id=163
+        ),
+    )
+    recorder = await feed(
+        bot_harness,
+        message_update("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6u", update_id=164),
+    )
+    body = " ".join(recorder.texts)
+    assert "checksum" in body
+    assert "CONFIRM ADDRESS CHANGE" not in body
+
+
+async def test_setting_a_quote_rate_needs_a_confirmation(bot_harness, admin_session, session):
+    method = await make_payment_method(session, code="btc_rate")
+    method.asset = "BTC"
+    method.asset_decimals = 8
+    await session.commit()
+    mid = method.id.hex
+
+    await _open_admin(bot_harness)
+    prompt = await feed(
+        bot_harness,
+        callback_update(AdminCB(section="method", action="rate", arg=mid).pack(), update_id=165),
+    )
+    assert "SET QUOTE RATE" in prompt.texts[0]
+
+    rejected = await feed(bot_harness, message_update("not a number", update_id=166))
+    assert "not a number" in rejected.texts[0]
+
+    confirm = await feed(bot_harness, message_update("60000", update_id=167))
+    body = confirm.texts[0]
+    assert "CONFIRM RATE CHANGE" in body
+    # The screen states the consequence in money, not only the number.
+    assert "0.00166667 BTC" in body  # rounded up, never below the order value
+
+    await session.refresh(method)
+    assert method.quote_rate != Decimal("60000"), "the rate must not change before confirming"

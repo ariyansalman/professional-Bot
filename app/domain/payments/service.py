@@ -126,9 +126,16 @@ class PaymentService:
                 safe_message="This payment method is currently unavailable.",
             )
 
-        expected_amount = quote_expected_amount(
-            order.total, method.quote_rate or Decimal("1"), method.asset_decimals
-        )
+        # A missing or zero rate must never fall back to 1:1. A $15 order on a
+        # method priced that way would ask the customer for 15 BTC.
+        rate = method.quote_rate
+        if rate is None or rate <= 0:
+            raise ConfigurationError(
+                f"payment method {method.code} has no positive quote rate configured",
+                safe_message="This payment method is currently unavailable.",
+            )
+
+        expected_amount = quote_expected_amount(order.total, rate, method.asset_decimals)
         if method.min_amount is not None and expected_amount < method.min_amount:
             raise ValidationError(
                 f"amount {expected_amount} below method minimum {method.min_amount}",
@@ -172,7 +179,7 @@ class PaymentService:
             token_contract=method.token_contract,
             memo=memo,
             required_confirmations=method.required_confirmations,
-            quote_rate=method.quote_rate or Decimal("1"),
+            quote_rate=rate,
             expires_at=now + timedelta(seconds=window),
             correlation_id=get_correlation_id() or order.correlation_id,
             verification_config={
@@ -181,7 +188,7 @@ class PaymentService:
                 "requires_memo": method.requires_memo,
                 "required_confirmations": method.required_confirmations,
                 "window_seconds": window,
-                "quote_rate": str(method.quote_rate or 1),
+                "quote_rate": str(rate),
                 "frozen_at": now.isoformat(),
             },
         )

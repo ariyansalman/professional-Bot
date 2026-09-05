@@ -180,10 +180,68 @@ permission, and you should not grant it. Required permissions:
    confirmation step, and is written to the audit log.
 4. Verify the **token contract** matches the asset you intend to accept.
 5. Set **required confirmations** appropriately for the chain's finality.
-6. **Enable** the method. A method with no receiving address cannot be enabled.
+6. **Set quote rate** — how much 1 unit of the payment asset is worth in the
+   currency your products are priced in. For a stablecoin priced in itself this
+   is `1`; for BTC or LTC it is the live price.
+7. **Enable** the method.
 
 Seeded defaults ship **disabled with no address**, so nothing can accept money
 until an operator has explicitly said where it should go.
+
+### What blocks enabling
+
+The panel refuses to enable a method until all of these hold, and names the one
+that is failing:
+
+| Blocker | Why |
+|---|---|
+| No receiving address | Nowhere to send the money |
+| Address fails validation | One wrong character sends every payment to nobody |
+| Token without a contract | The symbol alone cannot tell real USDT from a counterfeit |
+| Quote rate not positive | A rate of 0 would price the asset 1:1 against the order |
+| Memo required, no template | The chain identifies payments by memo; without one nothing can be attributed |
+
+### Address validation
+
+Addresses are checked against the **encoding**, not just the shape, because a
+single mistyped character is the failure mode that actually happens:
+
+| Network | Checked |
+|---|---|
+| BTC, LTC | Base58Check checksum + version byte, or Bech32/Bech32m checksum with the right HRP and witness version (BIP-350) |
+| TRON | Base58Check checksum + `0x41` version byte |
+| TON | 48-char user-friendly form with its CRC-16/XMODEM checksum, mainnet flag enforced; or raw `<workchain>:<64 hex>` |
+| Solana | Base58 decoding to exactly 32 bytes |
+| EVM chains | `0x` + 40 hex characters |
+
+Two of these carry no checksum and cannot be fully verified, which is a property
+of the formats rather than a gap here:
+
+* **Solana** addresses are raw 32-byte public keys.
+* **EVM** addresses have no checksum unless they use EIP-55 mixed-case, and
+  verifying that needs Keccak-256 — not the SHA3-256 in `hashlib`, and there is
+  no declared dependency providing it.
+* **Raw-form TON** addresses (`0:<hex>`) are plain hex.
+
+In those three cases the operator must compare the address themselves. The admin
+screen does not imply a check it did not perform.
+
+### Quote rates
+
+`quote_rate` is the price of one unit of the payment asset in the order
+currency. It is **frozen onto each payment intent at creation**, so changing it
+never re-prices a payment already awaiting settlement.
+
+A rate of exactly `1` is treated as a peg and never goes stale. Any other rate
+is a live price: the method screen shows when it was last set and warns once it
+is more than six hours old, because a volatile asset priced from an old quote
+mis-charges every order made from it.
+
+The platform does **not** fetch prices. There is no rate feed configured, and
+inventing one would mean either trusting an unverified source or pretending to a
+freshness the system does not have. The rate is set by an operator, timestamped,
+audit-logged, and its age is shown. Setting one requires a confirmation that
+states what a 100.00 order would ask for at the new rate.
 
 ## Confirmation defaults
 

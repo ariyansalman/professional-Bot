@@ -175,6 +175,22 @@ def _default_config(code: ProviderCode) -> dict:
     return {}
 
 
+def _setup_note(asset: str, requires_memo: bool) -> str:
+    """What the operator still has to configure before this method can go live."""
+    steps = ["Set a receiving address you control."]
+    if asset != "USDT":
+        steps.append(
+            f"Set a quote rate: how much 1 {asset} is worth in your product "
+            "currency. Without it the method cannot be enabled."
+        )
+    if requires_memo:
+        steps.append(
+            "This chain identifies payments by the memo/comment. Make sure the "
+            "receiving wallet accepts and preserves it."
+        )
+    return " ".join(f"{index}. {step}" for index, step in enumerate(steps, start=1))
+
+
 async def seed_methods(session) -> int:
     """Create payment methods, disabled and without a receiving address.
 
@@ -222,11 +238,15 @@ async def seed_methods(session) -> int:
                 requires_memo=requires_memo,
                 memo_template="{reference}" if requires_memo else None,
                 payment_window_seconds=1800,
+                # A stablecoin priced in itself is pegged at 1. A volatile asset
+                # has no rate we can invent, so it is left at 0 and the method
+                # cannot be enabled until an operator sets a real one.
                 quote_rate=Decimal("1") if asset == "USDT" else Decimal("0"),
                 warning_text=(
                     f"Send only {asset} on {label}. Funds sent on another network "
                     "cannot be credited automatically."
                 ),
+                instructions=_setup_note(asset, requires_memo),
             )
         )
         created += 1

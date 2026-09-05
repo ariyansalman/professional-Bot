@@ -154,6 +154,44 @@ async def test_intent_rejects_a_disabled_method(session):
         await PaymentService(session).create_intent(order=order, method=method)
 
 
+async def test_a_method_without_a_quote_rate_cannot_take_a_payment(session):
+    """A zero rate must never fall back to 1:1.
+
+    A $15 order on a Bitcoin method priced that way would have asked the
+    customer for 15 BTC.
+    """
+    from app.core.exceptions import ConfigurationError
+
+    _, _, order = await build_order(session)
+    method = await make_payment_method(session, code="btc_unpriced")
+    method.asset = "BTC"
+    method.asset_decimals = 8
+    method.quote_rate = Decimal("0")
+    await session.flush()
+
+    with pytest.raises(ConfigurationError):
+        await PaymentService(session).create_intent(order=order, method=method)
+
+
+async def test_a_volatile_asset_is_priced_from_its_quote_rate(session):
+    _, _, order = await build_order(session)  # a 15.00 order
+    method = await make_payment_method(session, code="btc_priced")
+    method.asset = "BTC"
+    method.asset_decimals = 8
+    method.quote_rate = Decimal("60000")
+    await session.flush()
+    await OrderService(session).transition(order, OrderStatus.PAYMENT_PENDING)
+
+    intent = await PaymentService(session).create_intent(order=order, method=method)
+    assert intent.expected_amount == Decimal("0.00025000")
+    assert intent.quote_rate == Decimal("60000")
+
+    # The rate is frozen: moving it afterwards must not re-price this payment.
+    method.quote_rate = Decimal("30000")
+    await session.flush()
+    assert intent.expected_amount == Decimal("0.00025000")
+
+
 # --- verification ---------------------------------------------------------
 
 

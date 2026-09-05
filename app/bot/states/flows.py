@@ -46,6 +46,7 @@ class AdminFlow(StatesGroup):
     method_address = State()
     method_contract = State()
     method_confirmations = State()
+    method_rate = State()
     # Support / broadcast
     support_reply = State()
     broadcast_message = State()

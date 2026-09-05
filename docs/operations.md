@@ -115,11 +115,27 @@ Change category**.
 ## Rotating a receiving address
 
 1. **Providers → Methods → \<method\> → Change address**
-2. The new address is validated for the network's format
+2. The address is checked against the network's encoding — a Base58Check or
+   Bech32 checksum failure is rejected before it can go live
 3. Confirm — the change is audit-logged
 
 Payments already in flight keep their original destination because each intent
 froze it at creation. Only new intents use the new address.
+
+## Setting a quote rate
+
+**Providers → Methods → \<method\> → Set quote rate**, then send how much one
+unit of the asset is worth in the currency your products are priced in.
+
+A stablecoin priced in itself is `1` and needs nothing further. BTC and LTC have
+no rate we can invent, so they ship at `0` and **cannot be enabled** until you
+set one — otherwise a 15.00 order would ask the customer for 15 BTC.
+
+The confirmation screen shows what a 100.00 order would cost at the new rate, so
+a misplaced decimal point is visible before you accept it. The rate is frozen
+onto each payment when it is created, so changing it never re-prices a payment
+already waiting. The method screen warns once a volatile rate is over six hours
+old.
 
 ## Rotating the encryption key
 

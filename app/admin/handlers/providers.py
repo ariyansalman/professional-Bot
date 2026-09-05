@@ -11,6 +11,7 @@ Credential handling rules enforced here:
 from __future__ import annotations
 
 import uuid
+from decimal import Decimal, InvalidOperation
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
@@ -31,10 +32,17 @@ from app.core.exceptions import AppError
 from app.core.logging import get_logger
 from app.core.redis import redis_health
 from app.core.security import get_secret_box, mask_address
-from app.core.timeutils import humanize_datetime
+from app.core.timeutils import humanize_datetime, utcnow
 from app.db.repositories.payments import PaymentMethodRepository, PaymentProviderRepository
 from app.domain.enums import AuditAction, PaymentProviderKind
+from app.domain.payments.addresses import validate_address
+from app.domain.payments.methods import (
+    RATE_STALE_AFTER_HOURS,
+    is_rate_stale,
+    readiness_blocker,
+)
 from app.domain.payments.registry import build_adapter
+from app.domain.payments.verification import quote_expected_amount
 
 log = get_logger(__name__)
 router = Router(name="admin_providers")
@@ -480,6 +488,8 @@ async def method_section(
         await _prompt_address(callback, session, admin, method_id, state)
     elif action == "contract":
         await _prompt_contract(callback, session, admin, method_id, state)
+    elif action == "rate":
+        await _prompt_rate(callback, session, admin, method_id, state)
     else:
         await _method_detail(callback, session, admin, method_id)
 
@@ -512,8 +522,22 @@ async def _method_detail(
         f"Required confirmations: {method.required_confirmations}",
         f"Payment window: {method.payment_window_seconds}s",
         f"Requires memo: {'yes' if method.requires_memo else 'no'}",
-        f"Quote rate: {method.quote_rate}",
+        f"Quote rate: {method.quote_rate} per 1 {esc(method.asset)}"
+        if method.quote_rate
+        else "Quote rate: not set",
+        f"Rate set: {humanize_datetime(method.quote_rate_updated_at)}"
+        if method.quote_rate_updated_at
+        else "Rate set: never",
     ]
+    blocker = readiness_blocker(method)
+    if blocker:
+        lines += ["", f"⚠️ Not ready to enable: {blocker}"]
+    elif is_rate_stale(method):
+        lines += [
+            "",
+            f"⚠️ The {esc(method.asset)} rate was set over "
+            f"{RATE_STALE_AFTER_HOURS}h ago. Every new order is priced from it.",
+        ]
     if method.min_amount:
         lines.append(f"Min: {money(method.min_amount, method.asset)}")
     if method.max_amount:
@@ -524,6 +548,7 @@ async def _method_detail(
     ]
     if method.provider.kind is PaymentProviderKind.BLOCKCHAIN:
         rows.append([button("📜 Change token contract", adm("method", "contract", method_id.hex))])
+    rows.append([button("💱 Set quote rate", adm("method", "rate", method_id.hex))])
     toggle = "⏸ Disable" if method.is_enabled else "▶️ Enable"
     rows.append([button(toggle, adm("method", "toggle", method_id.hex))])
     rows.append([button("◀ Back", adm("providers", "methods", method.provider_id.hex))])
@@ -538,13 +563,15 @@ async def _toggle_method(
     if method is None:
         await render(event, "⚠️ Method not found.", build([admin_back_row("providers")]))
         return
-    if not method.is_enabled and not method.receiving_address:
-        await render(
-            event,
-            "⚠️ Set a receiving address before enabling this method.",
-            build([[button("◀ Back", adm("method", "view", method_id.hex))]]),
-        )
-        return
+    if not method.is_enabled:
+        blocker = readiness_blocker(method)
+        if blocker:
+            await render(
+                event,
+                f"⚠️ Cannot enable this method: {blocker}",
+                build([[button("◀ Back", adm("method", "view", method_id.hex))]]),
+            )
+            return
 
     method.is_enabled = not method.is_enabled
     await session.flush()
@@ -595,7 +622,7 @@ async def receive_address(
         await message.answer("⚠️ Method not found.", reply_markup=build([admin_back_row()]))
         return
 
-    problem = _validate_address(address, method.network.value)
+    problem = validate_address(address, method.network)
     if problem:
         await message.answer(
             f"⚠️ {problem}",
@@ -750,36 +777,134 @@ async def confirmed_contract(
     await _method_detail(callback, session, admin, method_id)
 
 
-def _validate_address(address: str, network: str) -> str | None:
-    """Basic shape validation before an address goes live (section 93).
+async def _prompt_rate(
+    event, session: AsyncSession, admin: AdminContext, method_id: uuid.UUID, state: FSMContext
+) -> None:
+    """Capture the quote rate. Volatile assets are unusable without one."""
+    admin.require(Permissions.PAYMENT_METHODS_MANAGE)
+    method = await PaymentMethodRepository(session).get(method_id)
+    if method is None:
+        await render(event, "⚠️ Method not found.", build([admin_back_row("providers")]))
+        return
 
-    This is a guard against typos and paste errors, not a substitute for the
-    operator verifying the address. It rejects obviously wrong formats for the
-    selected network rather than accepting anything.
-    """
-    if not address or len(address) < 20 or len(address) > 128:
-        return "That address does not look valid."
-    if any(char.isspace() for char in address):
-        return "The address contains whitespace."
+    await state.set_state(AdminFlow.method_rate)
+    await state.update_data(method_id=str(method_id))
+    await render(
+        event,
+        "\n".join(
+            [
+                "💱 <b>SET QUOTE RATE</b>",
+                "",
+                f"Method: <b>{esc(method.display_name)}</b>",
+                f"Current: <code>{method.quote_rate}</code>",
+                "",
+                f"Send how much <b>1 {esc(method.asset)}</b> is worth in the "
+                "currency your products are priced in.",
+                "",
+                f"For a stablecoin priced in itself that is <code>1</code>. For "
+                f"{esc(method.asset)} it is the live price, for example "
+                "<code>64500.00</code>.",
+                "",
+                "⚠️ The rate is frozen into each payment when it is created, so "
+                "changing it never re-prices an order already awaiting payment.",
+            ]
+        ),
+        build([[button("❌ Cancel", adm("method", "view", method_id.hex))]]),
+    )
 
-    if network in {"bep20", "erc20", "avaxc", "arbitrum", "polygon"}:
-        if not address.startswith("0x") or len(address) != 42:
-            return "EVM addresses must start with 0x and be 42 characters long."
-        if not all(c in "0123456789abcdefABCDEF" for c in address[2:]):
-            return "EVM addresses must be hexadecimal."
-    elif network == "trc20":
-        if not address.startswith("T") or len(address) != 34:
-            return "TRON addresses must start with T and be 34 characters long."
-    elif network == "sol":
-        if not (32 <= len(address) <= 44):
-            return "Solana addresses are 32-44 base58 characters."
-    elif network == "btc":
-        if not address.startswith(("1", "3", "bc1")):
-            return "Bitcoin addresses start with 1, 3 or bc1."
-    elif network == "ltc":
-        if not address.startswith(("L", "M", "3", "ltc1")):
-            return "Litecoin addresses start with L, M, 3 or ltc1."
-    return None
+
+@router.message(AdminFlow.method_rate, F.text)
+async def receive_rate(
+    message: Message, session: AsyncSession, admin: AdminContext, state: FSMContext
+) -> None:
+    admin.require(Permissions.PAYMENT_METHODS_MANAGE)
+    data = await state.get_data()
+    method_id = uuid.UUID(data.get("method_id"))
+    method = await PaymentMethodRepository(session).get(method_id)
+    if method is None:
+        await state.clear()
+        await message.answer("⚠️ Method not found.", reply_markup=build([admin_back_row()]))
+        return
+
+    raw = (message.text or "").strip().replace(",", "")
+    try:
+        rate = Decimal(raw)
+    except (InvalidOperation, ValueError):
+        # Stay in the state so a corrected number goes straight through.
+        await message.answer(
+            "⚠️ That is not a number. Send something like <code>64500.00</code>.",
+            reply_markup=build([[button("❌ Cancel", adm("method", "view", method_id.hex))]]),
+        )
+        return
+    if rate <= 0:
+        await message.answer(
+            "⚠️ The rate must be greater than zero.",
+            reply_markup=build([[button("❌ Cancel", adm("method", "view", method_id.hex))]]),
+        )
+        return
+
+    await state.clear()
+    token = await create_confirmation(
+        actor_id=admin.user.id,
+        action="method_rate",
+        payload={"target": str(method_id), "rate": str(rate)},
+    )
+    # Show what the change actually means in money rather than only the number.
+    sample = quote_expected_amount(Decimal("100"), rate, method.asset_decimals)
+    await message.answer(
+        "\n".join(
+            [
+                "⚠️ <b>CONFIRM RATE CHANGE</b>",
+                "",
+                f"Method: <b>{esc(method.display_name)}</b>",
+                f"Current: <code>{method.quote_rate}</code>",
+                f"New: <code>{rate}</code>",
+                "",
+                f"A 100.00 order would ask for <b>{sample} {esc(method.asset)}</b>.",
+                "",
+                "This prices every payment created from now on.",
+            ]
+        ),
+        reply_markup=confirm_keyboard(token, yes="✅ Set rate"),
+    )
+
+
+@register("method_rate")
+async def confirmed_rate(
+    callback: CallbackQuery, session: AsyncSession, admin: AdminContext, payload: dict
+) -> None:
+    admin.require(Permissions.PAYMENT_METHODS_MANAGE)
+    method_id = target_uuid(payload)
+    method = await PaymentMethodRepository(session).get(method_id)
+    if method is None:
+        await render(callback, "⚠️ Method not found.", build([admin_back_row("providers")]))
+        return
+
+    previous = method.quote_rate
+    method.quote_rate = Decimal(str(payload.get("rate")))
+    method.quote_rate_updated_at = utcnow()
+    await session.flush()
+    await audit(
+        session,
+        admin,
+        AuditAction.PAYMENT_METHOD_UPDATED,
+        target_type="payment_method",
+        target_id=method_id,
+        details={
+            "code": method.code,
+            "field": "quote_rate",
+            "previous": str(previous),
+            "new": str(method.quote_rate),
+        },
+    )
+    log.warning(
+        "admin.quote_rate_changed",
+        method=method.code,
+        previous=str(previous),
+        new=str(method.quote_rate),
+        actor=str(admin.user.id),
+    )
+    await _method_detail(callback, session, admin, method_id)
 
 
 async def _health(event, session: AsyncSession, admin: AdminContext) -> None:
