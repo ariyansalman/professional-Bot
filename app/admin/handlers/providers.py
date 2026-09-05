@@ -30,7 +30,7 @@ from app.bot.states import AdminFlow
 from app.core.exceptions import AppError
 from app.core.logging import get_logger
 from app.core.redis import redis_health
-from app.core.security import get_secret_box, mask_address, mask_secret
+from app.core.security import get_secret_box, mask_address
 from app.core.timeutils import humanize_datetime
 from app.db.repositories.payments import PaymentMethodRepository, PaymentProviderRepository
 from app.domain.enums import AuditAction, PaymentProviderKind
@@ -127,7 +127,7 @@ async def _provider_detail(
         "",
         DIVIDER,
         "<b>CREDENTIALS</b>",
-        f"API key: {mask_secret(provider.api_key_hint) if provider.api_key_hint else 'not set'}",
+        f"API key: {'****' + provider.api_key_hint if provider.api_key_hint else 'not set'}",
         f"Secret: {'configured' if provider.encrypted_api_secret else 'not set'}",
         f"Passphrase: {'configured' if provider.encrypted_passphrase else 'not set'}",
         "",
@@ -410,7 +410,7 @@ async def _store_credentials(
                 "✅ <b>CREDENTIALS SAVED</b>",
                 "",
                 f"Provider: <b>{esc(provider.display_name)}</b>",
-                f"API key: {mask_secret(provider.api_key_hint)}",
+                f"API key: ****{provider.api_key_hint or ''}",
                 "",
                 "Test the connection before enabling the provider.",
             ]

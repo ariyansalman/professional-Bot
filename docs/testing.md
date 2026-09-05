@@ -12,9 +12,22 @@ make lint
 |---|---|
 | `tests/unit/test_verification_engine.py` | The section 132 payment matrix |
 | `tests/unit/test_adapters.py` | Provider payload normalisation (HTTP mocked) |
+| `tests/unit/test_ux_contract.py` | No dead buttons, state-aware keyboards, every screen state |
 | `tests/integration/test_order_payment_flow.py` | Order → payment → delivery |
 | `tests/integration/test_concurrency_postgres.py` | Real concurrent transactions |
+| `tests/integration/test_bot_flows.py` | Real Telegram updates through the real dispatcher |
+| `tests/integration/test_admin_flows.py` | Every admin screen, and its access control |
 | `tests/integration/test_reseller_api.py` | Auth, scopes, idempotency, isolation |
+
+## Why the bot-flow tests matter
+
+Importing a handler proves nothing about whether it runs. These tests feed real
+`Update` objects through the production middleware chain with Telegram's HTTP
+session replaced by a recorder, so the handlers, keyboards and rendered text are
+all genuine. They have already caught two bugs that no import check would:
+the middleware chain being registered as inner rather than outer (which made the
+entire admin panel unreachable), and an admin lookup that triggered an async
+lazy load for a brand-new user.
 
 ## Why the PostgreSQL tests matter
 
