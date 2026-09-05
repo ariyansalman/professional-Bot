@@ -71,7 +71,7 @@ async def products_section(
         await _product_list(callback, session, admin, callback_data.arg, callback_data.page)
 
 
-@router.callback_query(PageCB.filter(F.scope == "adm:products"))
+@router.callback_query(PageCB.filter(F.scope == "adm_products"))
 async def products_page(
     callback: CallbackQuery, callback_data: PageCB, session: AsyncSession, admin: AdminContext
 ) -> None:
@@ -122,10 +122,10 @@ async def _product_list(
     if result.pages > 1:
         nav = []
         if result.has_prev:
-            nav.append(button("◀", PageCB(scope="adm:products", page=result.page - 1, arg=filter_key).pack()))
+            nav.append(button("◀", PageCB(scope="adm_products", page=result.page - 1, arg=filter_key).pack()))
         nav.append(button(result.label, adm("products", "noop")))
         if result.has_next:
-            nav.append(button("▶", PageCB(scope="adm:products", page=result.page + 1, arg=filter_key).pack()))
+            nav.append(button("▶", PageCB(scope="adm_products", page=result.page + 1, arg=filter_key).pack()))
         rows.append(nav)
     rows.append(admin_back_row())
     await render(event, "\n".join(lines), build(rows))

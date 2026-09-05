@@ -97,7 +97,7 @@ async def payments_section(
         await _list(callback, session, admin, callback_data.arg or "review", callback_data.page)
 
 
-@router.callback_query(PageCB.filter(F.scope == "adm:payments"))
+@router.callback_query(PageCB.filter(F.scope == "adm_payments"))
 async def payments_page(
     callback: CallbackQuery, callback_data: PageCB, session: AsyncSession, admin: AdminContext
 ) -> None:
@@ -140,10 +140,10 @@ async def _list(
     if result.pages > 1:
         nav = []
         if result.has_prev:
-            nav.append(button("◀", PageCB(scope="adm:payments", page=result.page - 1, arg=filter_key).pack()))
+            nav.append(button("◀", PageCB(scope="adm_payments", page=result.page - 1, arg=filter_key).pack()))
         nav.append(button(result.label, adm("payments", "noop")))
         if result.has_next:
-            nav.append(button("▶", PageCB(scope="adm:payments", page=result.page + 1, arg=filter_key).pack()))
+            nav.append(button("▶", PageCB(scope="adm_payments", page=result.page + 1, arg=filter_key).pack()))
         rows.append(nav)
     rows.append(admin_back_row())
     await render(event, "\n".join(lines), build(rows))

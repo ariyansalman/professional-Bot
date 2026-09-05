@@ -55,7 +55,7 @@ async def resellers_section(
         await _list(callback, session, admin, callback_data.arg, callback_data.page)
 
 
-@router.callback_query(PageCB.filter(F.scope == "adm:resellers"))
+@router.callback_query(PageCB.filter(F.scope == "adm_resellers"))
 async def resellers_page(
     callback: CallbackQuery, callback_data: PageCB, session: AsyncSession, admin: AdminContext
 ) -> None:
@@ -98,10 +98,10 @@ async def _list(
     if result.pages > 1:
         nav = []
         if result.has_prev:
-            nav.append(button("◀", PageCB(scope="adm:resellers", page=result.page - 1, arg=filter_key).pack()))
+            nav.append(button("◀", PageCB(scope="adm_resellers", page=result.page - 1, arg=filter_key).pack()))
         nav.append(button(result.label, adm("resellers", "noop")))
         if result.has_next:
-            nav.append(button("▶", PageCB(scope="adm:resellers", page=result.page + 1, arg=filter_key).pack()))
+            nav.append(button("▶", PageCB(scope="adm_resellers", page=result.page + 1, arg=filter_key).pack()))
         rows.append(nav)
     rows.append(admin_back_row())
     await render(event, "\n".join(lines), build(rows))

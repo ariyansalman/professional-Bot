@@ -110,12 +110,12 @@ def list_keyboard(
     if page.pages > 1:
         if page.has_prev:
             pagination.append(
-                button("◀", PageCB(scope=f"adm:{section}", page=page.page - 1, arg=active_filter).pack())
+                button("◀", PageCB(scope=f"adm_{section}", page=page.page - 1, arg=active_filter).pack())
             )
         pagination.append(button(page.label, adm(section, action="noop")))
         if page.has_next:
             pagination.append(
-                button("▶", PageCB(scope=f"adm:{section}", page=page.page + 1, arg=active_filter).pack())
+                button("▶", PageCB(scope=f"adm_{section}", page=page.page + 1, arg=active_filter).pack())
             )
     if pagination:
         rows.append(pagination)

@@ -12,6 +12,7 @@ from __future__ import annotations
 import uuid
 
 from aiogram.filters.callback_data import CallbackData
+from pydantic import field_validator
 
 
 def pack_uuid(value: uuid.UUID | str) -> str:
@@ -104,11 +105,24 @@ class ConfirmCB(CallbackData, prefix="cfm"):
 
 
 class PageCB(CallbackData, prefix="pg"):
-    """Shared pagination control."""
+    """Shared pagination control.
+
+    ``scope`` must not contain ``:`` - aiogram uses it as the field separator
+    and packing would raise. Use ``_`` for compound scopes (``adm_payments``).
+    """
 
     scope: str
     page: int
     arg: str = ""
+
+    @field_validator("scope", "arg")
+    @classmethod
+    def _no_separator(cls, value: str) -> str:
+        if ":" in value:
+            raise ValueError(
+                "callback values must not contain ':' (aiogram's field separator)"
+            )
+        return value
 
 
 class NoopCB(CallbackData, prefix="noop"):

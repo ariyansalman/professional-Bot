@@ -52,7 +52,7 @@ async def users_section(
         await _user_list(callback, session, admin, callback_data.page)
 
 
-@router.callback_query(PageCB.filter(F.scope == "adm:users"))
+@router.callback_query(PageCB.filter(F.scope == "adm_users"))
 async def users_page(
     callback: CallbackQuery, callback_data: PageCB, session: AsyncSession, admin: AdminContext
 ) -> None:
@@ -74,10 +74,10 @@ async def _user_list(event, session: AsyncSession, admin: AdminContext, page: in
     if result.pages > 1:
         nav = []
         if result.has_prev:
-            nav.append(button("◀", PageCB(scope="adm:users", page=result.page - 1).pack()))
+            nav.append(button("◀", PageCB(scope="adm_users", page=result.page - 1).pack()))
         nav.append(button(result.label, adm("users", "noop")))
         if result.has_next:
-            nav.append(button("▶", PageCB(scope="adm:users", page=result.page + 1).pack()))
+            nav.append(button("▶", PageCB(scope="adm_users", page=result.page + 1).pack()))
         rows.append(nav)
     rows.append([button("🔎 Search", adm("search"))])
     rows.append(admin_back_row())
