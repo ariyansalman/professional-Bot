@@ -1,4 +1,4 @@
-.PHONY: help install dev test test-pg lint format typecheck migrate migration seed run-bot run-api run-worker up down clean
+.PHONY: help install dev test test-pg lint format typecheck migrate migration seed seed-demo audit smoke run-bot run-api run-worker up down clean
 
 PY := .venv/bin/python
 PIP := .venv/bin/pip
@@ -33,6 +33,12 @@ migrate: ## Apply migrations
 
 migration: ## Autogenerate a migration: make migration m="add x"
 	.venv/bin/alembic revision --autogenerate -m "$(m)"
+
+audit: ## Run the financial integrity audit against the configured database
+	$(PY) -m scripts.audit_financial
+
+smoke: ## Smoke test a running deployment: make smoke KEY=rt_live_... [URL=...]
+	$(PY) -m scripts.smoke_test --base-url $${URL:-http://localhost:8000} --api-key $(KEY)
 
 seed: ## Seed roles, providers and payment methods
 	$(PY) -m scripts.seed

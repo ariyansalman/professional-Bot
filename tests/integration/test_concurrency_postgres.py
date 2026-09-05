@@ -46,6 +46,35 @@ from tests.factories import (
 
 TEST_DSN = os.environ.get("TEST_DATABASE_URL")
 
+#: These tests DROP AND RECREATE every table, so the target database must be
+#: unmistakably a test database. Pointing TEST_DATABASE_URL at anything else is
+#: refused loudly rather than silently destroying data.
+_TEST_DB_MARKERS = ("test", "_ci", "ci_", "scratch")
+
+
+def _is_test_database(dsn: str | None) -> bool:
+    if not dsn:
+        return False
+    # Compare against the database name only, so a host called "fastest-db"
+    # cannot accidentally qualify.
+    from urllib.parse import urlparse
+
+    parsed = urlparse(dsn)
+    name = (parsed.path or "").lstrip("/").lower()
+    if not name:
+        name = (parse_qs(parsed.query).get("dbname", [""])[0]).lower()
+    return any(marker in name for marker in _TEST_DB_MARKERS)
+
+
+from urllib.parse import parse_qs  # noqa: E402
+
+if TEST_DSN and not _is_test_database(TEST_DSN):
+    raise RuntimeError(
+        "TEST_DATABASE_URL points at a database whose name does not look like a "
+        f"test database ({TEST_DSN.rsplit('/', 1)[-1]!r}). These tests drop every "
+        "table. Rename the database to include 'test' or point at a scratch one."
+    )
+
 pytestmark = pytest.mark.skipif(
     not TEST_DSN, reason="TEST_DATABASE_URL is not set; PostgreSQL concurrency tests skipped"
 )

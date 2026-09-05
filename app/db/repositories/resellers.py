@@ -194,9 +194,6 @@ class WebhookRepository(BaseRepository[WebhookEndpoint]):
         await self.add(endpoint)
         return endpoint, secret
 
-    def reveal_secret(self, endpoint: WebhookEndpoint) -> str:
-        return get_secret_box().decrypt(endpoint.encrypted_secret)
-
     async def record_success(self, endpoint: WebhookEndpoint, status_code: int) -> None:
         endpoint.consecutive_failures = 0
         endpoint.last_success_at = utcnow()

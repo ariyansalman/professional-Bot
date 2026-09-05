@@ -88,6 +88,38 @@ The reconciliation worker files anomalies for a human every 10 minutes:
 Each is deduplicated, so a recurring condition raises one item rather than one
 per scan.
 
+## Integrity audit
+
+Run the financial integrity audit periodically, and always after a restore:
+
+```bash
+make audit          # or: python -m scripts.audit_financial
+```
+
+It checks twelve invariants that must hold in any healthy deployment, including
+the ones that matter most:
+
+- no transaction is consumed twice
+- no order consumes two transactions
+- no verified payment is underpaid
+- **no completed delivery lacks a verified payment**
+- no order item is delivered twice
+- no stock item has two active reservations
+- every verified payment is journalled exactly once
+
+A non-zero exit code means an invariant is violated and needs investigation
+before trading continues.
+
+## Smoke testing a deployment
+
+```bash
+make smoke KEY=rt_live_... URL=https://your-host
+```
+
+Exercises health, authentication uniformity, product exposure, idempotent order
+creation and the payment-integrity invariants through the public API. It never
+fabricates a payment.
+
 ## Backup and recovery
 
 **What must be backed up**
