@@ -92,6 +92,19 @@ class ApiKeyRepository(BaseRepository[ApiKey]):
         )
         return list((await self.session.scalars(stmt)).all())
 
+    async def find_by_public_id(self, public_id: str) -> ApiKey | None:
+        """Look a key up by its short public identifier.
+
+        Admin search never touches key material: only the non-secret public id
+        is searchable, because the plaintext key is not stored at all.
+        """
+        stmt = (
+            select(ApiKey)
+            .where(ApiKey.public_id == public_id.strip())
+            .options(selectinload(ApiKey.reseller).selectinload(ResellerAccount.user))
+        )
+        return await self.session.scalar(stmt)
+
     async def active_count(self, reseller_id: uuid.UUID) -> int:
         stmt = select(func.count(ApiKey.id)).where(
             ApiKey.reseller_id == reseller_id, ApiKey.revoked_at.is_(None)
