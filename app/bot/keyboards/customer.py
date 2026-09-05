@@ -6,7 +6,6 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.bot.callbacks import (
     CheckoutCB,
-    Nav,
     OrderCB,
     PayCB,
     ProductCB,

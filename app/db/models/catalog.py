@@ -21,12 +21,12 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import (
-    Base,
     GUID,
+    Base,
     Money,
     SoftDeleteMixin,
-    TZDateTime,
     TimestampMixin,
+    TZDateTime,
     UUIDPrimaryKey,
 )
 from app.domain.enums import (
@@ -37,7 +37,7 @@ from app.domain.enums import (
 )
 
 if TYPE_CHECKING:
-    from app.db.models.order import OrderItem
+    pass
 
 
 class Category(UUIDPrimaryKey, TimestampMixin, SoftDeleteMixin, Base):

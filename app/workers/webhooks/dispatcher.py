@@ -71,7 +71,7 @@ class WebhookWorker(PeriodicWorker):
                 # Re-validated at delivery time: an endpoint registered before a
                 # DNS change must not become an SSRF vector.
                 assert_safe_outbound_url(endpoint.url)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 delivery.status = WebhookDeliveryStatus.EXHAUSTED
                 delivery.last_error = f"blocked url: {exc}"[:512]
                 await endpoints.record_failure(endpoint, None)

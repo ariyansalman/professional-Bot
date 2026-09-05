@@ -9,7 +9,6 @@ from app.core.logging import get_logger
 from app.core.redis import distributed_lock
 from app.db.repositories.payments import PaymentIntentRepository, PaymentProviderRepository
 from app.db.session import session_scope
-from app.domain.enums import VerificationOutcome
 from app.domain.payments.registry import build_adapter
 from app.domain.payments.service import PaymentService
 from app.workers.base import PeriodicWorker
@@ -154,7 +153,7 @@ class ProviderHealthWorker(PeriodicWorker):
                         latency_ms=health.latency_ms,
                         message=health.message,
                     )
-                except Exception as exc:  # noqa: BLE001 - health must never crash
+                except Exception as exc:
                     await repo.record_health(
                         provider, healthy=False, latency_ms=0, message=str(exc)[:200]
                     )

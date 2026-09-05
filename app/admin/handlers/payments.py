@@ -10,9 +10,19 @@ from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.admin.filters import IsAdmin
-from app.admin.keyboards.panels import adm, admin_back_row, confirm_keyboard, payment_review_keyboard
+from app.admin.keyboards.panels import (
+    adm,
+    admin_back_row,
+    confirm_keyboard,
+    payment_review_keyboard,
+)
 from app.admin.permissions.rbac import Permissions
-from app.admin.services.context import AdminContext, audit, consume_confirmation, create_confirmation
+from app.admin.services.context import (
+    AdminContext,
+    audit,
+    consume_confirmation,
+    create_confirmation,
+)
 from app.bot.callbacks import AdminCB, ConfirmCB, PageCB
 from app.bot.keyboards.common import build, button
 from app.bot.services.formatting import DIVIDER, esc, money

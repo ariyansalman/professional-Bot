@@ -31,7 +31,6 @@ from app.domain.enums import (
     PaymentProviderKind,
     ProductStatus,
     ProviderCode,
-    RoleName,
 )
 
 log = get_logger(__name__)

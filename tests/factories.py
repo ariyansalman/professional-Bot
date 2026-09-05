@@ -10,6 +10,7 @@ from app.core.security import get_secret_box
 from app.db.models.catalog import Category, InventoryItem, Product
 from app.db.models.payment import PaymentMethod, PaymentProvider
 from app.db.models.user import User
+from app.db.repositories.users import generate_referral_code
 from app.domain.enums import (
     DeliveryType,
     NetworkCode,
@@ -19,7 +20,6 @@ from app.domain.enums import (
     StockItemStatus,
 )
 from app.domain.payments.fingerprint import payload_fingerprint
-from app.db.repositories.users import generate_referral_code
 
 USDT_TRC20_CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
 TRON_RECEIVER = "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE"

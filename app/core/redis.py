@@ -106,8 +106,9 @@ class DistributedLock:
     def client(self) -> Redis:
         return self._client or get_redis()
 
-    async def acquire(self, *, blocking: bool = False, timeout: float = 5.0) -> bool:
-        deadline = asyncio.get_running_loop().time() + timeout
+    async def acquire(self, *, blocking: bool = False, wait_seconds: float = 5.0) -> bool:
+        """Try to take the lock, optionally waiting up to ``wait_seconds``."""
+        deadline = asyncio.get_running_loop().time() + wait_seconds
         while True:
             try:
                 acquired = await self.client.set(self.key, self.token, nx=True, ex=self.ttl)
@@ -137,11 +138,11 @@ class DistributedLock:
 
 @asynccontextmanager
 async def distributed_lock(
-    key: str, *, ttl: int = 60, blocking: bool = False, timeout: float = 5.0
+    key: str, *, ttl: int = 60, blocking: bool = False, wait_seconds: float = 5.0
 ) -> AsyncIterator[bool]:
     """Yield True when the lock was acquired, False when another worker holds it."""
     lock = DistributedLock(key, ttl=ttl)
-    acquired = await lock.acquire(blocking=blocking, timeout=timeout)
+    acquired = await lock.acquire(blocking=blocking, wait_seconds=wait_seconds)
     try:
         yield acquired
     finally:

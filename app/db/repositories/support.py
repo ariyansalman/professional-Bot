@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy import func, or_, select
@@ -18,7 +17,7 @@ from app.db.models.support import (
     SystemSetting,
 )
 from app.db.repositories.base import BaseRepository, Page
-from app.domain.enums import AuditAction, TicketPriority, TicketStatus
+from app.domain.enums import AuditAction, TicketStatus
 
 OPEN_TICKET_STATES = [
     TicketStatus.OPEN,

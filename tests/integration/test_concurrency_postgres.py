@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-from decimal import Decimal
 
 import pytest
 import pytest_asyncio
@@ -27,7 +26,6 @@ from app.db.models import Base
 from app.domain.enums import (
     NetworkCode,
     OrderStatus,
-    PaymentStatus,
     ProviderCode,
     StockItemStatus,
     VerificationOutcome,
@@ -118,7 +116,6 @@ async def test_same_transaction_cannot_be_claimed_by_two_concurrent_workers(
             await payments.submit_payment(intent=intent, reference="shared-tx")
             intent_ids.append(intent.id)
         await setup.commit()
-        method_id = method.id
 
     shared_external_id = "shared-onchain-tx-0001"
 

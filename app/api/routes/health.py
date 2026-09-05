@@ -38,7 +38,7 @@ async def ready(response: Response) -> HealthResponse:
         async with factory() as session:
             await session.execute(text("SELECT 1"))
         checks["database"] = "ok"
-    except Exception as exc:  # noqa: BLE001 - the reason is logged, not returned
+    except Exception as exc:
         log.error("health.database_unavailable", error=str(exc)[:300])
         checks["database"] = "unavailable"
         healthy = False

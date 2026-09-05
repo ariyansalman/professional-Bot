@@ -91,7 +91,7 @@ async def authenticate(
     token = authorization[7:].strip()
     try:
         parse_api_key(token)
-    except Exception as exc:  # noqa: BLE001 - malformed keys are just invalid
+    except Exception as exc:
         raise AuthenticationError(
             f"malformed api key: {exc}", safe_message=_GENERIC_AUTH_FAILURE
         ) from exc

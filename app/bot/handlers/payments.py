@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.callbacks import OrderCB, PayCB, pack_uuid, unpack_uuid
+from app.bot.callbacks import OrderCB, PayCB, unpack_uuid
 from app.bot.keyboards.common import build, button, nav_button
 from app.bot.keyboards.customer import (
     payment_method_keyboard,

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from datetime import timedelta
 from decimal import Decimal
 
@@ -69,7 +68,7 @@ async def build_order(session, *, quantity: int = 1, stock: int = 3):
 
 
 async def test_order_creation_snapshots_price_and_reserves_stock(session):
-    user, product, order = await build_order(session)
+    _, product, order = await build_order(session)
     inventory = InventoryService(session)
 
     assert order.total == Decimal("15.00000000")
@@ -195,7 +194,7 @@ def _stub_adapter(monkeypatch, transactions):
 
 
 async def test_exact_payment_verifies_and_marks_order_paid(session, monkeypatch):
-    payments, intent, order, _, result = await _verified_intent(session, monkeypatch)
+    _, intent, order, _, result = await _verified_intent(session, monkeypatch)
 
     assert result.outcome is VerificationOutcome.VERIFIED
     assert result.newly_verified is True
@@ -217,7 +216,7 @@ async def test_verified_payment_is_journalled_exactly_once(session, monkeypatch)
 
 
 async def test_underpayment_never_marks_the_order_paid(session, monkeypatch):
-    payments, intent, order, _, result = await _verified_intent(
+    _, intent, order, _, result = await _verified_intent(
         session, monkeypatch, {"amount_units": base_units("14.000000", 6)}
     )
     assert result.outcome is VerificationOutcome.UNDERPAID
@@ -249,7 +248,7 @@ async def test_insufficient_confirmations_waits(session, monkeypatch):
 
 
 async def test_counterfeit_token_is_not_credited(session, monkeypatch):
-    _, intent, order, _, result = await _verified_intent(
+    _, _, order, _, result = await _verified_intent(
         session, monkeypatch, {"token_contract": "TFakeContract00000000000000000000"}
     )
     assert result.outcome is VerificationOutcome.WRONG_ASSET
@@ -257,7 +256,7 @@ async def test_counterfeit_token_is_not_credited(session, monkeypatch):
 
 
 async def test_anomaly_raises_a_reconciliation_record(session, monkeypatch):
-    payments, intent, _, _, _ = await _verified_intent(
+    payments, _, _, _, _ = await _verified_intent(
         session, monkeypatch, {"amount_units": base_units("14.000000", 6)}
     )
     page = await payments.reconciliation.open_records()

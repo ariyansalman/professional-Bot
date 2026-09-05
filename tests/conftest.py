@@ -22,10 +22,14 @@ os.environ.setdefault("TELEGRAM_BOT_TOKEN", "123456:test-token-for-unit-tests-on
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/15")
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
-from app.db.models import Base  # noqa: E402
-from app.db.session import configure_sessionmaker  # noqa: E402
+from app.db.models import Base
+from app.db.session import configure_sessionmaker
 
 
 @pytest_asyncio.fixture

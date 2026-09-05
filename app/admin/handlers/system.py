@@ -14,7 +14,7 @@ from app.admin.permissions.rbac import Permissions
 from app.admin.services.context import AdminContext, audit, create_confirmation
 from app.bot.callbacks import AdminCB
 from app.bot.keyboards.common import build, button
-from app.bot.middlewares.maintenance import MAINTENANCE_KEY, MAINTENANCE_MESSAGE_KEY
+from app.bot.middlewares.maintenance import MAINTENANCE_KEY
 from app.bot.services.formatting import DIVIDER, esc
 from app.bot.services.screen import render
 from app.bot.states import AdminFlow

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
@@ -35,7 +34,7 @@ async def _make_reseller(session, *, telegram_id: int, scopes=None, status=Resel
     )
     session.add(account)
     await session.flush()
-    record, plaintext = await ApiKeyRepository(session).create(
+    _, plaintext = await ApiKeyRepository(session).create(
         reseller_id=account.id,
         name="test key",
         scopes=list(scopes if scopes is not None else ALL_SCOPES),

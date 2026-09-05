@@ -24,7 +24,7 @@ from app.bot.services.formatting import (
     order_row,
     receipt,
 )
-from app.bot.services.screen import loading, render
+from app.bot.services.screen import render
 from app.core.exceptions import AppError
 from app.core.logging import get_logger
 from app.db.models.order import Order

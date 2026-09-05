@@ -15,7 +15,6 @@ from app.bot.services.formatting import DIVIDER, esc, product_card
 from app.bot.services.screen import render
 from app.bot.states import CheckoutFlow
 from app.core.logging import get_logger
-from app.db.models.user import User
 from app.db.repositories.base import Page
 from app.db.repositories.catalog import CategoryRepository, ProductRepository
 from app.domain.enums import Language
@@ -112,7 +111,7 @@ async def _category(event, session: AsyncSession, lang: Language, ref: str, page
     body = [product_card(p, stock[p.id], lang) for p in result.items]
     await render(
         event,
-        "\n".join(header + ["", "\n\n".join(body)]),
+        "\n".join([*header, "", "\n\n".join(body)]),
         product_list_keyboard(lang, result, stock, scope="category", scope_arg=ref),
     )
 

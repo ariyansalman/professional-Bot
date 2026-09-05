@@ -12,8 +12,8 @@ from app.core.redis import distributed_lock
 from app.db.repositories.orders import DeliveryRepository, OrderRepository
 from app.db.session import session_scope
 from app.domain.enums import DeliveryStatus, Language, NotificationKind, WebhookEvent
-from app.i18n import t
 from app.domain.orders.delivery import DeliveryService
+from app.i18n import t
 from app.workers.base import PeriodicWorker
 
 log = get_logger(__name__)
@@ -82,7 +82,7 @@ class DeliveryWorker(PeriodicWorker):
                 service = DeliveryService(session)
                 try:
                     payload = await service.fulfil(delivery)
-                except Exception as exc:  # noqa: BLE001 - recorded, never fatal
+                except Exception as exc:
                     log.warning(
                         "delivery.attempt_failed",
                         delivery_id=str(delivery_id),
@@ -160,7 +160,7 @@ class DeliveryWorker(PeriodicWorker):
             await self.bot.send_message(telegram_id, text)
             if payload.file_id:
                 await self.bot.send_document(telegram_id, payload.file_id)
-        except Exception:  # noqa: BLE001 - delivery is already recorded
+        except Exception:
             log.warning("delivery.notify_failed", telegram_id=telegram_id)
 
     async def _dispatch_webhooks(self, order_id: uuid.UUID) -> None:

@@ -48,10 +48,9 @@ def build_dispatcher() -> Dispatcher:
     session exists before maintenance is checked, and throttling runs last where
     the user's language is already known.
     """
-    settings = get_settings()
     try:
         storage = RedisStorage(redis=get_redis())
-    except Exception as exc:  # noqa: BLE001 - fall back rather than fail to boot
+    except Exception as exc:
         log.warning("bot.redis_storage_unavailable", error=str(exc)[:200])
         storage = MemoryStorage()
 

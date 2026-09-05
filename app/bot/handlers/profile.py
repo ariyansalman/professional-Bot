@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
@@ -26,7 +28,6 @@ from app.db.repositories.users import NotificationRepository, ReferralRepository
 from app.domain.enums import Language
 from app.domain.referrals.service import ReferralService
 from app.i18n import t
-from urllib.parse import quote
 
 log = get_logger(__name__)
 router = Router(name="profile")

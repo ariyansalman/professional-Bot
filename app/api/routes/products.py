@@ -13,7 +13,7 @@ from app.api.schemas.products import CategoryOut, PricingOut, ProductOut
 from app.core.exceptions import NotFoundError
 from app.db.models.catalog import Product
 from app.db.repositories.catalog import ProductRepository
-from app.domain.enums import ApiScope, DeliveryType
+from app.domain.enums import ApiScope
 from app.domain.inventory.service import InventoryService, StockStatus
 
 router = APIRouter(prefix="/products", tags=["products"])

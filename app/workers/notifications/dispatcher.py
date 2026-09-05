@@ -98,7 +98,7 @@ async def notify_payment_result(
         user.is_bot_blocked = True
     except TelegramRetryAfter as exc:
         log.info("notify.rate_limited", retry_after=exc.retry_after)
-    except Exception:  # noqa: BLE001 - the notification row is already stored
+    except Exception:
         log.warning("notify.send_failed", user_id=str(user.id))
 
 
@@ -138,7 +138,7 @@ class NotificationWorker(PeriodicWorker):
                     notification.pushed_at = None
                     await asyncio.sleep(min(exc.retry_after, 30))
                     break
-                except Exception:  # noqa: BLE001
+                except Exception:
                     log.warning("notification.send_failed", id=str(notification.id))
                 await asyncio.sleep(self._delay)
         return sent
@@ -214,7 +214,7 @@ class BroadcastWorker(PeriodicWorker):
                 except TelegramRetryAfter as exc:
                     await asyncio.sleep(min(exc.retry_after, 60))
                     break
-                except Exception:  # noqa: BLE001
+                except Exception:
                     broadcast.failed_count += 1
                 finally:
                     # The cursor advances even on failure so one bad recipient
@@ -291,7 +291,7 @@ class RestockNotifierWorker(PeriodicWorker):
                         notified += 1
                     except TelegramForbiddenError:
                         user.is_bot_blocked = True
-                    except Exception:  # noqa: BLE001
+                    except Exception:
                         log.warning("restock.notify_failed", user_id=str(subscription.user_id))
                     await asyncio.sleep(1.0 / max(get_settings().telegram.global_rate_limit, 1))
         return notified

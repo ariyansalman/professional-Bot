@@ -1,0 +1,80 @@
+# Local development stack. Production runs on Railway with managed
+# PostgreSQL/Redis; this file exists so the platform can be brought up locally
+# with one command.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: commerce
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  migrate:
+    build: .
+    command: ["alembic", "upgrade", "head"]
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/commerce
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+
+  api:
+    build: .
+    command: ["python", "-m", "app.main", "api"]
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/commerce
+      REDIS_URL: redis://redis:6379/0
+      SERVICE: api
+    ports: ["8000:8000"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+
+  bot:
+    build: .
+    command: ["python", "-m", "app.main", "bot"]
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/commerce
+      REDIS_URL: redis://redis:6379/0
+      SERVICE: bot
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+
+  worker:
+    build: .
+    command: ["python", "-m", "app.main", "worker"]
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/commerce
+      REDIS_URL: redis://redis:6379/0
+      SERVICE: worker
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+
+volumes:
+  pgdata:
+  redisdata:

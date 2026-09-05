@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from decimal import Decimal
-
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.bot.callbacks import CheckoutCB, OrderCB, pack_uuid, unpack_uuid
+from app.bot.callbacks import CheckoutCB, unpack_uuid
 from app.bot.keyboards.common import build, button, nav_button
 from app.bot.keyboards.customer import (
     checkout_keyboard,
@@ -24,7 +22,6 @@ from app.core.exceptions import AppError, CouponError
 from app.core.logging import get_logger
 from app.db.models.user import User
 from app.db.repositories.catalog import ProductRepository
-from app.db.repositories.resellers import ResellerRepository
 from app.domain.enums import Language, OrderStatus
 from app.domain.orders.service import OrderService
 from app.i18n import t

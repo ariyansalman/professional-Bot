@@ -10,7 +10,6 @@ Credential handling rules enforced here:
 
 from __future__ import annotations
 
-import asyncio
 import uuid
 
 from aiogram import F, Router
@@ -429,7 +428,7 @@ async def _delete_secret_message(message: Message) -> None:
     """Remove a message containing a secret from the chat history."""
     try:
         await message.delete()
-    except Exception:  # noqa: BLE001 - best effort; the secret is already stored
+    except Exception:
         log.info("admin.secret_message_delete_failed")
 
 

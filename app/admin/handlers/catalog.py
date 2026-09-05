@@ -20,7 +20,6 @@ from app.bot.keyboards.common import build, button
 from app.bot.services.formatting import DIVIDER, esc, money
 from app.bot.services.screen import render
 from app.bot.states import AdminFlow
-from app.core.exceptions import AppError
 from app.core.logging import get_logger
 from app.core.money import quantize_money
 from app.core.timeutils import short_date
@@ -36,7 +35,6 @@ from app.domain.enums import (
     CouponType,
     DeliveryType,
     ProductStatus,
-    StockItemStatus,
 )
 from app.domain.inventory.service import InventoryService
 
@@ -571,7 +569,7 @@ async def add_stock(
     # The submitted secrets must not linger in the chat history.
     try:
         await message.delete()
-    except Exception:  # noqa: BLE001 - deletion is best effort
+    except Exception:
         log.info("admin.stock_message_delete_failed")
 
     lines = [

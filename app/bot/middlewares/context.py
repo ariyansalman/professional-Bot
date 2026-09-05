@@ -10,12 +10,13 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from aiogram import BaseMiddleware
-from aiogram.types import CallbackQuery, Message, TelegramObject, User as TgUser
+from aiogram.types import CallbackQuery, Message, TelegramObject
+from aiogram.types import User as TgUser
 
 from app.core.correlation import correlation_scope
 from app.core.logging import get_logger
-from app.db.session import session_scope
 from app.db.repositories.users import UserRepository
+from app.db.session import session_scope
 from app.domain.enums import Language, UserStatus
 from app.i18n import t
 

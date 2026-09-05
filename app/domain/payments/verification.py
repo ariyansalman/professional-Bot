@@ -29,7 +29,7 @@ from datetime import timedelta
 from decimal import Decimal
 from typing import Any
 
-from app.core.money import AmountMatch, compare_amounts, from_base_units
+from app.core.money import AmountMatch, compare_amounts
 from app.domain.enums import VerificationOutcome
 from app.domain.payments.fingerprint import normalize_address
 from app.domain.payments.types import ObservedTransaction, PaymentExpectation

@@ -10,7 +10,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.admin.permissions.rbac import Permissions, permissions_for, require_permission
+from app.admin.permissions.rbac import Permissions, permissions_for
 from app.core.config import get_settings
 from app.core.exceptions import PermissionDeniedError
 from app.core.logging import get_logger

@@ -481,7 +481,7 @@ class AuditAction(StrEnum):
     PROVIDER_TOGGLED = "provider.toggled"
     PAYMENT_METHOD_UPDATED = "payment_method.updated"
     PAYMENT_ADDRESS_CHANGED = "payment_method.address_changed"
-    TOKEN_CONTRACT_CHANGED = "payment_method.contract_changed"
+    TOKEN_CONTRACT_CHANGED = "payment_method.contract_changed"  # noqa: S105 - action name, not a credential
     SETTINGS_UPDATED = "settings.updated"
     MAINTENANCE_TOGGLED = "maintenance.toggled"
     BROADCAST_SENT = "broadcast.sent"

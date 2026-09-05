@@ -1,7 +1,7 @@
 from app.admin.permissions.rbac import (
     PERMISSIONS,
-    Permissions,
     ROLE_PERMISSIONS,
+    Permissions,
     has_permission,
     permissions_for,
     require_permission,
@@ -9,8 +9,8 @@ from app.admin.permissions.rbac import (
 
 __all__ = [
     "PERMISSIONS",
-    "Permissions",
     "ROLE_PERMISSIONS",
+    "Permissions",
     "has_permission",
     "permissions_for",
     "require_permission",

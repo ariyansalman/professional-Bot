@@ -32,7 +32,7 @@ from app.core.exceptions import (
     ValidationError,
 )
 from app.core.logging import get_logger
-from app.core.money import base_units, quantize_money
+from app.core.money import base_units
 from app.core.timeutils import ensure_utc, is_expired, utcnow
 from app.db.models.order import Order
 from app.db.models.payment import PaymentAttempt, PaymentIntent, PaymentMethod

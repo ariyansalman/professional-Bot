@@ -123,7 +123,7 @@ class EVMAdapter(BaseAdapter):
         )
         if not isinstance(payload, dict):
             raise ProviderError(f"evm: unexpected RPC payload for {method}", provider=self.http.provider)
-        if "error" in payload and payload["error"]:
+        if payload.get("error"):
             error = payload["error"]
             raise ProviderError(
                 f"evm: RPC error on {method}: {error}",

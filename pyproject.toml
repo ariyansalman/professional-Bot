@@ -19,10 +19,21 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "C4", "ASYNC", "S", "RUF"]
-ignore = ["E501", "B008", "S101", "RUF012"]
+ignore = [
+    "E501",    # line length is handled by the formatter
+    "B008",    # FastAPI/aiogram dependency defaults are call expressions by design
+    "S101",    # asserts are used in tests
+    "RUF012",  # ClassVar annotations on ORM/enum mappings add noise
+    "RUF001",  # typographic characters (—, ·) and Bengali text are intentional
+    # Generic[T] is kept over PEP 695 syntax so the codebase also imports on
+    # 3.11 toolchains; the runtime target remains 3.12.
+    "UP046",
+    "UP047",
+]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S105", "S106"]
+# Test factories use dict(...) + **overrides deliberately for readability.
+"tests/*" = ["S105", "S106", "C408"]
 "alembic/*" = ["E402"]
 
 [tool.mypy]

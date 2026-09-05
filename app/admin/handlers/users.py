@@ -364,7 +364,7 @@ async def support_reply(
                     ]
                 ),
             )
-        except Exception:  # noqa: BLE001 - the ticket is saved regardless
+        except Exception:
             log.info("admin.support_push_failed", ticket=ticket.reference)
 
     await render(

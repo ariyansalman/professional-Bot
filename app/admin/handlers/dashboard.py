@@ -26,7 +26,6 @@ from app.db.repositories.payments import PaymentIntentRepository
 from app.db.repositories.resellers import ApiKeyRepository
 from app.db.repositories.support import AuditRepository, SupportRepository
 from app.db.repositories.users import UserRepository
-from app.i18n import t
 
 log = get_logger(__name__)
 router = Router(name="admin_dashboard")
