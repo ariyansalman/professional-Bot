@@ -94,7 +94,15 @@ class UUIDPrimaryKey:
 
 
 class BigIntPrimaryKey:
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, sort_order=-100)
+    # SQLite only auto-increments a column declared exactly INTEGER PRIMARY KEY,
+    # so the variant keeps BIGINT on PostgreSQL while staying insertable on
+    # SQLite, which the test suite uses.
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+        sort_order=-100,
+    )
 
 
 class TimestampMixin:

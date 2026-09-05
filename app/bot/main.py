@@ -42,11 +42,15 @@ def build_bot() -> Bot:
 def build_dispatcher() -> Dispatcher:
     """Assemble the dispatcher with FSM storage and the middleware chain.
 
-    Middleware order is deliberate:
-      errors -> context -> maintenance -> throttling
-    so the error handler wraps everything (including context failures), the
-    session exists before maintenance is checked, and throttling runs last where
-    the user's language is already known.
+    The chain is registered as **outer** middleware. This is not cosmetic: inner
+    middleware runs after a router's filters, so the admin router's ``IsAdmin``
+    filter would be evaluated before the session and user existed in the data
+    dict and would deny every request. Outer middleware runs before root filters,
+    which is what those filters need.
+
+    Order is deliberate: errors wrap everything (including a failure inside the
+    context middleware), the session exists before maintenance is checked, and
+    throttling runs last, where the user's language is already known.
     """
     try:
         storage = RedisStorage(redis=get_redis())
@@ -57,10 +61,10 @@ def build_dispatcher() -> Dispatcher:
     dispatcher = Dispatcher(storage=storage)
 
     for observer in (dispatcher.message, dispatcher.callback_query):
-        observer.middleware(ErrorMiddleware())
-        observer.middleware(ContextMiddleware())
-        observer.middleware(MaintenanceMiddleware())
-        observer.middleware(ThrottlingMiddleware())
+        observer.outer_middleware(ErrorMiddleware())
+        observer.outer_middleware(ContextMiddleware())
+        observer.outer_middleware(MaintenanceMiddleware())
+        observer.outer_middleware(ThrottlingMiddleware())
 
     dispatcher.include_router(build_router())
     return dispatcher

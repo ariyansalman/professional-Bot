@@ -53,23 +53,45 @@ async def load_admin_context(session: AsyncSession, user: User) -> AdminContext 
     deployment has a way in; everyone else must hold a database-assigned role.
     """
     settings = get_settings()
-    role_names = {RoleName(role.name) for role in user.roles}
+    # Roles are queried explicitly rather than read off ``user.roles``. A user
+    # created moments ago in this same transaction has no loaded collection, and
+    # touching it would trigger a lazy load - which raises in async code. This
+    # is reachable in production: a brand-new account whose first message is
+    # /admin.
+    role_names = {RoleName(name) for name in await _role_names(session, user)}
 
     if user.telegram_id in settings.telegram.bootstrap_admin_ids:
-        role_names.add(RoleName.SUPER_ADMIN)
-        # Persist the bootstrap grant so it is auditable and revocable.
-        if not any(role.name is RoleName.SUPER_ADMIN for role in user.roles):
+        if RoleName.SUPER_ADMIN not in role_names:
+            # Persist the bootstrap grant so it is auditable and revocable.
             roles_repo = RoleRepository(session)
             role = await roles_repo.get_by_name(RoleName.SUPER_ADMIN)
             if role is not None:
                 await roles_repo.assign(user, role)
                 log.info("admin.bootstrap_role_granted", user_id=str(user.id))
+            else:
+                log.warning(
+                    "admin.bootstrap_role_missing",
+                    detail="run scripts.seed to create the roles",
+                )
+        role_names.add(RoleName.SUPER_ADMIN)
 
     if not role_names:
         return None
     return AdminContext(
         user=user, roles=frozenset(role_names), permissions=permissions_for(role_names)
     )
+
+
+async def _role_names(session: AsyncSession, user: User) -> set[str]:
+    """Role names held by a user, loaded without relying on the relationship."""
+    from sqlalchemy import select
+
+    from app.db.models.user import Role, user_roles
+
+    stmt = select(Role.name).join(user_roles, user_roles.c.role_id == Role.id).where(
+        user_roles.c.user_id == user.id
+    )
+    return set((await session.scalars(stmt)).all())
 
 
 async def audit(
