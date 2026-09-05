@@ -334,3 +334,49 @@ def test_every_verification_outcome_has_a_customer_screen():
             # No screen may show a raw enum name to a customer.
             assert "VerificationOutcome." not in text
             assert "PaymentStatus." not in text
+
+
+# --- logging --------------------------------------------------------------
+
+
+def test_no_log_call_collides_with_a_reserved_structlog_key():
+    """``log.info("x", event=...)`` raises TypeError at runtime.
+
+    structlog's stdlib BoundLogger takes the event name positionally, so
+    passing ``event=`` as well is a crash — and one that only fires on the code
+    path that logs it. This previously broke every successful webhook delivery.
+    """
+    import ast
+    import pathlib
+
+    reserved = {"event", "level", "logger", "timestamp", "exc_info"}
+    collisions: list[str] = []
+
+    for path in sorted(pathlib.Path("app").rglob("*.py")):
+        tree = ast.parse(path.read_text())
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+                continue
+            if node.func.attr not in {"info", "warning", "error", "debug", "exception"}:
+                continue
+            target = node.func.value
+            if not (isinstance(target, ast.Name) and target.id in {"log", "logger"}):
+                continue
+            # Only calls that also pass the event name positionally can collide.
+            if not node.args:
+                continue
+            for keyword in node.keywords:
+                if keyword.arg in reserved:
+                    collisions.append(f"{path}:{node.lineno} passes {keyword.arg}=")
+
+    assert collisions == [], "reserved structlog keys used as log kwargs: " + "; ".join(collisions)
+
+
+def test_logging_a_reserved_key_really_does_raise():
+    """Guards the guard: prove the collision is a genuine runtime failure."""
+    from app.core.logging import configure_logging, get_logger
+
+    configure_logging("INFO", json_output=True)
+    log = get_logger("test")
+    with pytest.raises(TypeError, match="multiple values"):
+        log.info("some.event", event="collides")

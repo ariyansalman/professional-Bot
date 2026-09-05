@@ -352,7 +352,7 @@ async def support_reply(
 
     # Push the reply to the customer's chat.
     customer = await UserRepository(session).get(ticket.user_id)
-    if customer is not None and not customer.is_bot_blocked:
+    if customer is not None and not customer.is_bot_blocked and message.bot is not None:
         try:
             await message.bot.send_message(
                 customer.telegram_id,

@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from decimal import Decimal
 from functools import lru_cache
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, cast
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -27,8 +27,13 @@ _BASE_CONFIG: dict[str, Any] = {
 
 
 def _config(**overrides: Any) -> SettingsConfigDict:
-    """Build a settings config that inherits the shared base options."""
-    return SettingsConfigDict(**{**_BASE_CONFIG, **overrides})
+    """Build a settings config that inherits the shared base options.
+
+    ``SettingsConfigDict`` is a TypedDict, so the merged mapping is cast rather
+    than splatted: the keys are known-good but only at runtime.
+    """
+    merged: dict[str, Any] = {**_BASE_CONFIG, **overrides}
+    return cast(SettingsConfigDict, merged)
 
 
 class _Base(BaseSettings):

@@ -247,9 +247,9 @@ class InventoryRepository(BaseRepository[InventoryItem]):
         )
         rows = await self.session.execute(stmt)
         counts = dict.fromkeys(product_ids, 0)
-        # ``.all()`` is required: a Result exposes .keys(), so passing it
-        # straight to dict() would make dict treat it as a mapping.
-        counts.update(dict(rows.all()))
+        # Rows are consumed as explicit pairs: a Result exposes .keys(), so
+        # handing it to dict() directly would make dict treat it as a mapping.
+        counts.update((row[0], row[1]) for row in rows.all())
         return counts
 
     async def claim_available(

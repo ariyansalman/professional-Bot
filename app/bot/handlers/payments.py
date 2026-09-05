@@ -216,6 +216,8 @@ async def payment_qr(
     if intent.memo:
         caption += f"\n\n{t('payment.memo_required', lang)}\n<code>{intent.memo}</code>"
 
+    if callback.message is None:
+        return
     await callback.answer()
     await callback.message.answer_photo(
         BufferedInputFile(buffer.read(), filename=f"{intent.reference}.png"),

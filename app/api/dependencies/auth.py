@@ -18,6 +18,7 @@ which keys exist.
 from __future__ import annotations
 
 import ipaddress
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -57,7 +58,7 @@ class APIPrincipal:
             )
 
 
-async def get_session() -> AsyncSession:
+async def get_session() -> AsyncIterator[AsyncSession]:
     """Request-scoped transactional session."""
     async with session_scope() as session:
         yield session

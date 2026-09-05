@@ -267,7 +267,7 @@ class ResellerService:
                 queued += 1
         log.info(
             "reseller.webhook_queued",
-            event=event.value,
+            event_type=event.value,
             order=order.reference,
             queued=queued,
             endpoints=len(endpoints),

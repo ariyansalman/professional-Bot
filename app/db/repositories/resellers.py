@@ -294,7 +294,13 @@ class IdempotencyRepository(BaseRepository[IdempotencyRecord]):
         canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
         return hashlib.sha256(canonical.encode()).hexdigest()
 
-    async def get(self, scope: str, key: str) -> IdempotencyRecord | None:
+    async def find(self, scope: str, key: str) -> IdempotencyRecord | None:
+        """Look up by (scope, key).
+
+        Deliberately not named ``get``: the base class's ``get`` takes a primary
+        key, and overriding it with a different signature invites calling the
+        wrong one.
+        """
         stmt = select(IdempotencyRecord).where(
             IdempotencyRecord.scope == scope, IdempotencyRecord.key == key
         )
@@ -332,4 +338,4 @@ class IdempotencyRepository(BaseRepository[IdempotencyRecord]):
         result = await self.session.execute(
             delete(IdempotencyRecord).where(IdempotencyRecord.expires_at <= utcnow())
         )
-        return result.rowcount or 0
+        return int(getattr(result, "rowcount", 0) or 0)

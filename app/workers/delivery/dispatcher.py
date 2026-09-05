@@ -138,6 +138,8 @@ class DeliveryWorker(PeriodicWorker):
     ) -> None:
         from app.bot.services.formatting import delivered_product, esc
 
+        if self.bot is None:  # a worker deployed without a Telegram token
+            return
         try:
             if payload.items:
                 text = delivered_product(

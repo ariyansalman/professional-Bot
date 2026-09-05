@@ -3,11 +3,20 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from typing import overload
 
 
 def utcnow() -> datetime:
     """Current time as an aware UTC datetime."""
     return datetime.now(UTC)
+
+
+@overload
+def ensure_utc(value: datetime) -> datetime: ...
+
+
+@overload
+def ensure_utc(value: None) -> None: ...
 
 
 def ensure_utc(value: datetime | None) -> datetime | None:

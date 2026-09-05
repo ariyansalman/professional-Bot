@@ -35,8 +35,13 @@ async def render(
     disable_preview: bool = True,
     answer_text: str | None = None,
     show_alert: bool = False,
-) -> Message | None:
-    """Show a screen, editing in place wherever possible."""
+) -> Message | bool | None:
+    """Show a screen, editing in place wherever possible.
+
+    Returns whatever the Telegram call returned: ``Message`` for a send,
+    ``Message | bool`` for an edit (Telegram answers ``True`` when it has
+    nothing to return), or ``None`` when there was no message to act on.
+    """
     if isinstance(event, CallbackQuery):
         # Always answer the callback so the client stops its spinner.
         try:
@@ -44,7 +49,9 @@ async def render(
         except TelegramBadRequest:
             pass  # already answered or expired
         message = event.message
-        if message is None:
+        # An InaccessibleMessage carries no content and cannot be edited; the
+        # customer sees the toast from answer() above instead.
+        if not isinstance(message, Message):
             return None
         return await _edit_or_send(message, text, keyboard, photo, disable_preview)
 
@@ -61,7 +68,7 @@ async def _edit_or_send(
     keyboard: InlineKeyboardMarkup | None,
     photo: str | None,
     disable_preview: bool,
-) -> Message | None:
+) -> Message | bool | None:
     has_media = bool(message.photo or message.video or message.document)
 
     try:

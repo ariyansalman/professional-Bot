@@ -55,6 +55,9 @@ jobs:
       - name: Lint
         run: ruff check app tests scripts
 
+      - name: Type check
+        run: mypy app --ignore-missing-imports
+
       - name: Verify migrations match the models
         run: |
           alembic upgrade head

@@ -204,6 +204,8 @@ class SolanaAdapter(BaseAdapter):
         transfers: list[ObservedTransaction] = []
         for index, key in enumerate(account_keys):
             address = key.get("pubkey") if isinstance(key, dict) else str(key)
+            if not address:
+                continue
             if index >= len(pre_balances) or index >= len(post_balances):
                 continue
             delta = int(post_balances[index]) - int(pre_balances[index])
@@ -218,8 +220,8 @@ class SolanaAdapter(BaseAdapter):
                     asset=expectation.asset,
                     amount_units=delta,
                     decimals=LAMPORTS_DECIMALS,
-                    to_address=address,
-                    to_address_normalized=normalize_address(address, NetworkCode.SOL),
+                    to_address=str(address),
+                    to_address_normalized=normalize_address(str(address), NetworkCode.SOL),
                     token_contract=None,
                     is_successful=succeeded,
                     status_label="success" if succeeded else "failed",

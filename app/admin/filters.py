@@ -22,7 +22,11 @@ log = get_logger(__name__)
 
 class IsAdmin(BaseFilter):
     async def __call__(
-        self, event: TelegramObject, session: AsyncSession = None, user: User = None, **_: Any
+        self,
+        event: TelegramObject,
+        session: AsyncSession | None = None,
+        user: User | None = None,
+        **_: Any,
     ) -> bool | dict[str, AdminContext]:
         if session is None or user is None:
             return False

@@ -100,6 +100,17 @@ Notes:
   the same environment variables on all three services.
 - Health check path for the `api` service: `/health`.
 
+## Docker
+
+```bash
+docker build -t telegram-commerce .
+docker run --env-file .env -p 8000:8000 telegram-commerce python -m app.main api
+```
+
+One image serves all three roles; the role is chosen by the start command, so
+every process runs identical, verified code. The image runs as an unprivileged
+user and its healthcheck hits `/health`.
+
 ## Health endpoints
 
 | Endpoint | Meaning |

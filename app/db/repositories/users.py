@@ -96,7 +96,7 @@ class UserRepository(BaseRepository[User]):
         term = query.strip().lstrip("@")
         stmt = select(User).order_by(User.created_at.desc())
         if term:
-            filters = [
+            filters: list[Any] = [
                 User.username.ilike(f"%{term}%"),
                 User.first_name.ilike(f"%{term}%"),
                 User.last_name.ilike(f"%{term}%"),

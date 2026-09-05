@@ -682,6 +682,10 @@ async def coupon_value(
     code = data.get("coupon_code")
     raw = (message.text or "").strip()
 
+    if not code:
+        await render(message, "⚠️ That flow expired.", build([admin_back_row("coupons")]))
+        return
+
     is_percentage = raw.endswith("%")
     try:
         value = Decimal(raw.rstrip("%").strip())

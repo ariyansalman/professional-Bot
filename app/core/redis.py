@@ -196,9 +196,11 @@ async def dedupe(key: str, ttl: int = 3600, *, client: Redis | None = None) -> b
 
 async def cache_get(key: str, *, client: Redis | None = None) -> str | None:
     try:
-        return await (client or get_redis()).get(namespaced("cache", key))
+        # The client is created with decode_responses=True, so values are str.
+        value = await (client or get_redis()).get(namespaced("cache", key))
     except RedisError:
         return None
+    return value if value is None else str(value)
 
 
 async def cache_set(

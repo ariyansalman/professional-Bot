@@ -37,7 +37,7 @@ class IdempotencyGuard:
         if not self.key:
             return None
         repo = IdempotencyRepository(self.session)
-        record = await repo.get(self.scope, self.key)
+        record = await repo.find(self.scope, self.key)
         if record is None:
             return None
         fingerprint = repo.fingerprint(payload)

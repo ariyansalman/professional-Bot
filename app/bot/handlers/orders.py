@@ -266,7 +266,7 @@ async def view_product(
         )
         return
 
-    if file_ids:
+    if file_ids and callback.message is not None:
         await callback.answer()
         for file_id in file_ids:
             await callback.message.answer_document(file_id)

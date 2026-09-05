@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # ---------------------------------------------------------------------------
 # Single image serving all three roles (bot, api, worker). The role is chosen
 # by the start command, so every process runs identical, verified code.

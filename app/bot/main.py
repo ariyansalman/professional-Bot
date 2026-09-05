@@ -8,6 +8,7 @@ import contextlib
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.fsm.storage.base import BaseStorage
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 
@@ -52,6 +53,7 @@ def build_dispatcher() -> Dispatcher:
     context middleware), the session exists before maintenance is checked, and
     throttling runs last, where the user's language is already known.
     """
+    storage: BaseStorage
     try:
         storage = RedisStorage(redis=get_redis())
     except Exception as exc:

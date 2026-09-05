@@ -117,7 +117,7 @@ class WebhookWorker(PeriodicWorker):
                 await endpoints.record_success(endpoint, status_code)
                 log.info(
                     "webhook.delivered",
-                    event=delivery.event_type,
+                    event_type=delivery.event_type,
                     endpoint_id=str(endpoint.id),
                     attempts=delivery.attempts,
                     status=status_code,
@@ -132,7 +132,7 @@ class WebhookWorker(PeriodicWorker):
                 delivery.next_attempt_at = None
                 log.warning(
                     "webhook.exhausted",
-                    event=delivery.event_type,
+                    event_type=delivery.event_type,
                     endpoint_id=str(endpoint.id),
                     attempts=delivery.attempts,
                     last_error=delivery.last_error,
@@ -143,7 +143,7 @@ class WebhookWorker(PeriodicWorker):
                 delivery.next_attempt_at = utcnow() + timedelta(seconds=backoff)
                 log.info(
                     "webhook.retry_scheduled",
-                    event=delivery.event_type,
+                    event_type=delivery.event_type,
                     attempts=delivery.attempts,
                     retry_in=backoff,
                 )

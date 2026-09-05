@@ -82,7 +82,7 @@ async def _render_checkout(
     except CouponError:
         # A coupon that became invalid between screens is dropped silently and
         # the customer sees the undiscounted, still-correct total.
-        await state.update_data(**{KEY_COUPON: None})
+        await state.update_data({KEY_COUPON: None})
         quote = await orders.quote(product=product, quantity=quantity, user=user)
     except AppError as exc:
         await render(
@@ -93,7 +93,7 @@ async def _render_checkout(
         return
 
     await state.update_data(
-        **{
+        {
             KEY_PRODUCT: product_ref,
             KEY_QUANTITY: quantity,
             KEY_COUPON: quote.coupon_code,
@@ -129,7 +129,7 @@ async def coupon_prompt(
     callback: CallbackQuery, callback_data: CheckoutCB, lang: Language, state: FSMContext
 ) -> None:
     await state.set_state(CheckoutFlow.entering_coupon)
-    await state.update_data(**{KEY_PRODUCT: callback_data.pid, KEY_QUANTITY: callback_data.qty})
+    await state.update_data({KEY_PRODUCT: callback_data.pid, KEY_QUANTITY: callback_data.qty})
     text = "\n".join([t("coupon.title", lang), "", t("coupon.prompt", lang)])
     await render(
         callback, text, coupon_prompt_keyboard(lang, unpack_uuid(callback_data.pid), callback_data.qty)
@@ -170,7 +170,7 @@ async def coupon_submitted(
         await render(message, f"⚠️ {exc.safe_message}", build([[nav_button(t("btn.shop", lang), "shop")]]))
         return
 
-    await state.update_data(**{KEY_COUPON: quote.coupon_code})
+    await state.update_data({KEY_COUPON: quote.coupon_code})
     await render(
         message,
         coupon_applied(quote.discount, quote.total, quote.currency, lang),
@@ -196,7 +196,7 @@ async def clear_coupon(
     lang: Language,
     state: FSMContext,
 ) -> None:
-    await state.update_data(**{KEY_COUPON: None})
+    await state.update_data({KEY_COUPON: None})
     await _render_checkout(
         callback, session, user, lang, state, callback_data.pid, callback_data.qty
     )

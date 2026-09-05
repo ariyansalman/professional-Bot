@@ -26,7 +26,7 @@ format: ## Auto-format and fix lint issues
 	.venv/bin/ruff check --fix app tests scripts
 
 typecheck: ## Static type check
-	.venv/bin/mypy app
+	.venv/bin/mypy app --ignore-missing-imports
 
 migrate: ## Apply migrations
 	.venv/bin/alembic upgrade head

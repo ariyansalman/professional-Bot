@@ -28,7 +28,7 @@ def esc(value: Any) -> str:
     return escape(str(value), quote=False)
 
 
-def money(amount: Decimal | str, currency: str | None = None) -> str:
+def money(amount: Decimal | str | int, currency: str | None = None) -> str:
     return esc(format_amount(amount, currency))
 
 
